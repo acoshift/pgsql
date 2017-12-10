@@ -14,7 +14,7 @@ type TxOptions struct {
 }
 
 const (
-	defaultMaxAttempts = 3
+	defaultMaxAttempts = 10
 )
 
 // Tx interface
