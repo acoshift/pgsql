@@ -17,12 +17,6 @@ const (
 	defaultMaxAttempts = 10
 )
 
-// Tx interface
-type Tx interface {
-	Commit() error
-	Rollback() error
-}
-
 // RunInTx runs fn inside retryable transaction
 func RunInTx(db *sql.DB, opts *TxOptions, fn func(*sql.Tx) error) error {
 	return RunInTxContext(context.Background(), db, opts, fn)
