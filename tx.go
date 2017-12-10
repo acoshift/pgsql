@@ -31,9 +31,11 @@ func RunInTx(db *sql.DB, opts *TxOptions, fn func(*sql.Tx) error) error {
 // RunInTxContext runs fn inside retryable transaction with context
 func RunInTxContext(ctx context.Context, db *sql.DB, opts *TxOptions, fn func(*sql.Tx) error) (err error) {
 	if opts == nil {
-		opts = &TxOptions{
-			MaxAttempts: defaultMaxAttempts,
-		}
+		opts = &TxOptions{}
+	}
+	// override invalid max attempts
+	if opts.MaxAttempts <= 0 {
+		opts.MaxAttempts = defaultMaxAttempts
 	}
 	// override default isolation level to serializable
 	if opts.Isolation == sql.LevelDefault {
