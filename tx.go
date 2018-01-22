@@ -49,9 +49,9 @@ func RunInTxContext(ctx context.Context, db *sql.DB, opts *TxOptions, fn func(*s
 				return
 			}
 		}
+		tx.Rollback() // ignore rollback error
 		pqErr, ok := err.(*pq.Error)
 		if retryable := ok && (pqErr.Code == "40001"); !retryable {
-			tx.Rollback() // ignore rollback error
 			return
 		}
 	}
