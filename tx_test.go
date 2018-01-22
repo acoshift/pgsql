@@ -13,11 +13,8 @@ import (
 )
 
 func TestTx(t *testing.T) {
-	db, err := sql.Open("postgres", "postgres://postgres@localhost:5432/postgres?sslmode=disable")
-	if err != nil {
-		t.Fatalf("open database connection error; %v", err)
-	}
-	_, err = db.Exec(`
+	db := open(t)
+	_, err := db.Exec(`
 		drop table if exists test_pgsql_tx;
 		create table test_pgsql_tx (
 			id int primary key,
