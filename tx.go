@@ -23,7 +23,7 @@ func RunInTx(db *sql.DB, opts *TxOptions, fn func(*sql.Tx) error) error {
 }
 
 // RunInTxContext runs fn inside retryable transaction with context
-func RunInTxContext(ctx context.Context, db *sql.DB, opts *TxOptions, fn func(*sql.Tx) error) (err error) {
+func RunInTxContext(ctx context.Context, db *sql.DB, opts *TxOptions, fn func(*sql.Tx) error) error {
 	if opts == nil {
 		opts = &TxOptions{}
 	}
@@ -36,24 +36,31 @@ func RunInTxContext(ctx context.Context, db *sql.DB, opts *TxOptions, fn func(*s
 		opts.Isolation = sql.LevelSerializable
 	}
 
-	var tx *sql.Tx
-	for i := 0; i < opts.MaxAttempts; i++ {
-		tx, err = db.BeginTx(ctx, &opts.TxOptions)
+	f := func() error {
+		tx, err := db.BeginTx(ctx, &opts.TxOptions)
 		if err != nil {
-			return
+			return err
 		}
+		// use defer to also rollback when panic
+		defer tx.Rollback()
 
 		err = fn(tx)
-		if err == nil {
-			if err = tx.Commit(); err == nil {
-				return
-			}
+		if err != nil {
+			return err
 		}
-		tx.Rollback() // ignore rollback error
+		return tx.Commit()
+	}
+
+	for i := 0; i < opts.MaxAttempts; i++ {
+		err := f()
+		if err == nil {
+			return nil
+		}
 		pqErr, ok := err.(*pq.Error)
 		if retryable := ok && (pqErr.Code == "40001"); !retryable {
-			return
+			return err
 		}
 	}
-	return
+
+	return nil
 }
