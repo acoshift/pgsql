@@ -38,8 +38,7 @@ type nullTime struct {
 }
 
 func (t *nullTime) Scan(src interface{}) error {
-	p, _ := src.(time.Time)
-	*t.Time = p
+	*t.Time, _ = src.(time.Time)
 	return nil
 }
 
