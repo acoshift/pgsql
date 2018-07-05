@@ -18,8 +18,10 @@ type nullString struct {
 }
 
 func (s *nullString) Scan(src interface{}) error {
-	*s.value, _ = src.(string)
-	return nil
+	var t sql.NullString
+	err := t.Scan(src)
+	*s.value = t.String
+	return err
 }
 
 func (s nullString) Value() (driver.Value, error) {
