@@ -27,7 +27,7 @@ func TestTime(t *testing.T) {
 	}
 	defer db.Exec(`drop table test_pgsql_time`)
 
-	var n time.Time
+	var n, k time.Time
 	var p pgsql.Time
 	err = db.QueryRow(`select value from test_pgsql_time where id = 0`).Scan(&p)
 	if err != nil {
@@ -38,6 +38,13 @@ func TestTime(t *testing.T) {
 		t.Fatalf("scan native time error; %v", err)
 	}
 	if !p.Equal(n) {
+		t.Fatalf("scan time not equal when insert; expected %v; got %v", n, p)
+	}
+	err = db.QueryRow(`select value from test_pgsql_time where id = 0`).Scan(pgsql.NullTime(&k))
+	if err != nil {
+		t.Fatalf("scan null time error; %v", err)
+	}
+	if !k.Equal(n) {
 		t.Fatalf("scan time not equal when insert; expected %v; got %v", n, p)
 	}
 
@@ -60,8 +67,24 @@ func TestTime(t *testing.T) {
 		t.Fatalf("invalid time")
 	}
 
+	err = db.QueryRow(`select $1 = $2`, pgsql.NullTime(&n), n).Scan(&ok)
+	if err != nil {
+		t.Fatalf("sql error; %v", err)
+	}
+	if !ok {
+		t.Fatalf("invalid time")
+	}
+
 	p.Time = time.Time{}
-	err = db.QueryRow(`insert into test_pgsql_time (id, value) values (3, $1) returning value is null`, p).Scan(&ok)
+	err = db.QueryRow(`insert into test_pgsql_time (id, value) values (2, $1) returning value is null`, p).Scan(&ok)
+	if err != nil {
+		t.Fatalf("sql error; %v", err)
+	}
+	if !ok {
+		t.Fatalf("invalid time")
+	}
+
+	err = db.QueryRow(`insert into test_pgsql_time (id, value) values (3, $1) returning value is null`, pgsql.NullTime(new(time.Time))).Scan(&ok)
 	if err != nil {
 		t.Fatalf("sql error; %v", err)
 	}
