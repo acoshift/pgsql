@@ -32,3 +32,14 @@ func IsInvalidTextRepresentation(err error) bool {
 	}
 	return false
 }
+
+// IsForeignKeyViolation checks is error an foreign_key_violation
+func IsForeignKeyViolation(err error, constraint ...string) bool {
+	if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23503" {
+		if len(constraint) == 0 {
+			return true
+		}
+		return contains(constraint, pqErr.Constraint)
+	}
+	return false
+}
