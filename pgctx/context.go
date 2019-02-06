@@ -8,15 +8,27 @@ import (
 	"github.com/acoshift/pgsql"
 )
 
+type DB interface {
+	Queryer
+	pgsql.BeginTxer
+}
+
+// Queryer interface
+type Queryer interface {
+	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+}
+
 // NewContext creates new context
-func NewContext(ctx context.Context, db *sql.DB) context.Context {
+func NewContext(ctx context.Context, db DB) context.Context {
 	ctx = context.WithValue(ctx, ctxKeyDB{}, db)
 	ctx = context.WithValue(ctx, ctxKeyQueryer{}, db)
 	return ctx
 }
 
 // Middleware injects db into request's context
-func Middleware(db *sql.DB) func(h http.Handler) http.Handler {
+func Middleware(db DB) func(h http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r = r.WithContext(NewContext(r.Context(), db))
@@ -26,24 +38,29 @@ func Middleware(db *sql.DB) func(h http.Handler) http.Handler {
 }
 
 // RunInTx starts sql tx if not started
-func RunInTx(ctx context.Context, f func(context.Context) error) error {
+func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
 	// already in tx, do nothing
 	if _, ok := ctx.Value(ctxKeyQueryer{}).(*sql.Tx); ok {
 		return f(ctx)
 	}
 
-	db := ctx.Value(ctxKeyDB{}).(*sql.DB)
+	db := ctx.Value(ctxKeyDB{}).(pgsql.BeginTxer)
 	var cm *onCommitted
-	err := pgsql.RunInTx(db, nil, func(tx *sql.Tx) error {
+	abort := false
+	err := pgsql.RunInTxContext(ctx, db, nil, func(tx *sql.Tx) error {
 		cm = &onCommitted{} // reset when retry
 		ctx := context.WithValue(ctx, ctxKeyQueryer{}, tx)
 		ctx = context.WithValue(ctx, ctxKeyCommitted{}, cm)
-		return f(ctx)
+		err := f(ctx)
+		if err == pgsql.ErrAbortTx {
+			abort = true
+		}
+		return err
 	})
 	if err != nil {
 		return err
 	}
-	if cm != nil {
+	if !abort && cm != nil {
 		for _, f := range cm.f {
 			f(ctx)
 		}
@@ -76,14 +93,8 @@ type onCommitted struct {
 	f []func(ctx context.Context)
 }
 
-type queryer interface {
-	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
-	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
-	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
-}
-
-func q(ctx context.Context) queryer {
-	return ctx.Value(ctxKeyQueryer{}).(queryer)
+func q(ctx context.Context) Queryer {
+	return ctx.Value(ctxKeyQueryer{}).(Queryer)
 }
 
 // QueryRow calls db.QueryRowContext
