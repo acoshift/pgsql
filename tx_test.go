@@ -37,6 +37,8 @@ func TestTx(t *testing.T) {
 
 	deposit := func(balance int) error {
 		return pgsql.RunInTx(db, opts, func(tx *sql.Tx) error {
+			var err error
+
 			// log.Println("deposit", balance)
 			var acc0, acc1 int
 			err = tx.QueryRow(`select value from test_pgsql_tx where id = 0`).Scan(&acc0)
@@ -60,6 +62,8 @@ func TestTx(t *testing.T) {
 	}
 	withdraw := func(balance int) error {
 		return pgsql.RunInTx(db, opts, func(tx *sql.Tx) error {
+			var err error
+
 			// log.Println("withdraw", balance)
 			var acc0, acc1 int
 			err = tx.QueryRow(`select value from test_pgsql_tx where id = 1`).Scan(&acc1)
@@ -86,6 +90,8 @@ func TestTx(t *testing.T) {
 	}
 	transfer := func(balance int) error {
 		return pgsql.RunInTx(db, opts, func(tx *sql.Tx) error {
+			var err error
+
 			// log.Println("transfer", balance)
 			var acc1, acc2 int
 			err = tx.QueryRow(`select value from test_pgsql_tx where id = 1`).Scan(&acc1)
