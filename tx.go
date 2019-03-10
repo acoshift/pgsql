@@ -39,20 +39,27 @@ func RunInTx(db BeginTxer, opts *TxOptions, fn func(*sql.Tx) error) error {
 // RunInTxContext DO NOT handle panic.
 // But when panic, it will rollback the transaction.
 func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(*sql.Tx) error) error {
-	if opts == nil {
-		opts = &TxOptions{}
+	option := TxOptions{
+		TxOptions: sql.TxOptions{
+			Isolation: sql.LevelSerializable,
+		},
+		MaxAttempts: defaultMaxAttempts,
 	}
-	// override invalid max attempts
-	if opts.MaxAttempts <= 0 {
-		opts.MaxAttempts = defaultMaxAttempts
-	}
-	// override default isolation level to serializable
-	if opts.Isolation == sql.LevelDefault {
-		opts.Isolation = sql.LevelSerializable
+
+	if opts != nil {
+		if opts.MaxAttempts > 0 {
+			option.MaxAttempts = opts.MaxAttempts
+		}
+		option.TxOptions = opts.TxOptions
+
+		// override default isolation level to serializable
+		if opts.Isolation == sql.LevelDefault {
+			option.Isolation = sql.LevelSerializable
+		}
 	}
 
 	f := func() error {
-		tx, err := db.BeginTx(ctx, &opts.TxOptions)
+		tx, err := db.BeginTx(ctx, &option.TxOptions)
 		if err != nil {
 			return err
 		}
@@ -66,7 +73,7 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 		return tx.Commit()
 	}
 
-	for i := 0; i < opts.MaxAttempts; i++ {
+	for i := 0; i < option.MaxAttempts; i++ {
 		err := f()
 		if err == nil || err == ErrAbortTx {
 			return nil
