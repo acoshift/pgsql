@@ -1,38 +1,42 @@
 package statement
 
-import (
-	"strings"
-)
+func Delete(f func(b *DeleteBuilder)) (string, []interface{}) {
+	var b DeleteBuilder
+	b.push("delete")
+	f(&b)
 
-// DeleteFrom creates delete from statement
-func DeleteFrom(table string) *DeleteFromStatement {
-	return &DeleteFromStatement{
-		table: table,
+	return b.build()
+}
+
+type DeleteBuilder struct {
+	builder
+
+	returning group
+}
+
+func (b *DeleteBuilder) From(table string) {
+	b.push("from", table)
+}
+
+func (b *DeleteBuilder) Where(f func(b *WhereBuilder)) {
+	var x WhereBuilder
+	x.ops.sep = "and"
+	f(&x)
+
+	if !x.ops.empty() {
+		b.push("where")
+		b.push(x.ops)
 	}
 }
 
-// DeleteFromStatement type
-type DeleteFromStatement struct {
-	table string
-	WhereClause
+func (b *DeleteBuilder) Returning(field ...string) {
+	b.returning.pushString(field...)
 }
 
-func (stmt *DeleteFromStatement) QueryString() string {
-	var b strings.Builder
-	b.Grow(len(stmt.table) + 20)
-
-	b.WriteString("delete from ")
-	b.WriteString(stmt.table)
-
-	where := stmt.WhereClause.QueryString()
-	if len(where) > 0 {
-		b.WriteString(" ")
-		b.WriteString(where)
+func (b *DeleteBuilder) build() (string, []interface{}) {
+	if !b.returning.empty() {
+		b.push("returning")
+		b.push(b.returning)
 	}
-
-	return b.String()
-}
-
-func (stmt *DeleteFromStatement) Args() []interface{} {
-	return stmt.WhereClause.Args()
+	return b.builder.build()
 }

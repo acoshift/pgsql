@@ -1,65 +1,52 @@
 package statement
 
-import (
-	"strings"
-)
+func Insert(f func(b *InsertBuilder)) (string, []interface{}) {
+	var b InsertBuilder
+	b.push("insert")
+	f(&b)
 
-// InsertInto creates insert into statement
-func InsertInto(table string) *InsertIntoStatement {
-	return &InsertIntoStatement{
-		table: table,
+	return b.build()
+}
+
+type InsertBuilder struct {
+	builder
+
+	columns   parenGroup
+	values    group
+	returning group
+}
+
+func (b *InsertBuilder) Into(table string) {
+	b.push("into", table)
+}
+
+func (b *InsertBuilder) Columns(col ...string) {
+	b.columns.pushString(col...)
+}
+
+func (b *InsertBuilder) Value(value ...interface{}) {
+	var x parenGroup
+	for _, v := range value {
+		x.push(arg(v))
 	}
+	b.values.push(x)
 }
 
-// InsertIntoStatement type
-type InsertIntoStatement struct {
-	table     string
-	columns   []string
-	values    []interface{}
-	returning []string
+func (b *InsertBuilder) Returning(field ...string) {
+	b.returning.pushString(field...)
 }
 
-func (stmt *InsertIntoStatement) Columns(cols ...string) {
-	stmt.columns = append(stmt.columns, cols...)
-}
-
-func (stmt *InsertIntoStatement) Values(values ...interface{}) {
-	stmt.values = append(stmt.values, values...)
-}
-
-func (stmt *InsertIntoStatement) Returning(cols ...string) {
-	stmt.returning = append(stmt.returning, cols...)
-}
-
-func (stmt *InsertIntoStatement) QueryString() string {
-	var b strings.Builder
-	b.Grow(12 + len(stmt.table) + 2 + 10 + 1 + 50)
-
-	b.WriteString("insert into ")
-	b.WriteString(stmt.table)
-
-	if len(stmt.columns) > 0 {
-		b.WriteString(" (")
-		b.WriteString(strings.Join(stmt.columns, ", "))
-		b.WriteString(")")
+func (b *InsertBuilder) build() (string, []interface{}) {
+	if !b.columns.empty() {
+		b.push(b.columns)
 	}
-
-	if len(stmt.values) > 0 {
-		b.WriteString(" values (")
-		b.WriteString(placeHolder(1, len(stmt.values)))
-		b.WriteString(")")
+	if !b.values.empty() {
+		b.push("values")
+		b.push(b.values)
 	}
-
-	if len(stmt.returning) > 0 {
-		b.WriteString(" returning ")
-		b.WriteString(strings.Join(stmt.returning, ", "))
+	if !b.returning.empty() {
+		b.push("returning")
+		b.push(b.returning)
 	}
-
-	b.WriteString(";")
-
-	return b.String()
-}
-
-func (stmt *InsertIntoStatement) Args() []interface{} {
-	return stmt.values
+	return b.builder.build()
 }
