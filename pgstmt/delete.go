@@ -1,4 +1,4 @@
-package statement
+package pgstmt
 
 func Delete(f func(b *DeleteBuilder)) (string, []interface{}) {
 	var b DeleteBuilder

@@ -1,4 +1,4 @@
-package statement
+package pgstmt
 
 type WhereBuilder struct {
 	builder

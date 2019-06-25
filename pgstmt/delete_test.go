@@ -1,21 +1,21 @@
-package statement_test
+package pgstmt_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/acoshift/pgsql/statement"
+	"github.com/acoshift/pgsql/pgstmt"
 )
 
 func TestDelete(t *testing.T) {
 	t.Parallel()
 
-	q, args := statement.Delete(func(b *statement.DeleteBuilder) {
+	q, args := pgstmt.Delete(func(b *pgstmt.DeleteBuilder) {
 		b.From("users")
-		b.Where(func(b *statement.WhereBuilder) {
+		b.Where(func(b *pgstmt.WhereBuilder) {
 			b.Eq("username", "test")
-			b.Or(func(b *statement.WhereBuilder) {
+			b.Or(func(b *pgstmt.WhereBuilder) {
 				b.Gt("age", 20)
 			})
 		})

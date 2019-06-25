@@ -1,18 +1,18 @@
-package statement_test
+package pgstmt_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/acoshift/pgsql/statement"
+	"github.com/acoshift/pgsql/pgstmt"
 )
 
 func TestSelect(t *testing.T) {
 	t.Parallel()
 
 	t.Run("only select", func(t *testing.T) {
-		q, args := statement.Select(func(b *statement.SelectBuilder) {
+		q, args := pgstmt.Select(func(b *pgstmt.SelectBuilder) {
 			b.Columns("1")
 		})
 
@@ -24,7 +24,7 @@ func TestSelect(t *testing.T) {
 	})
 
 	t.Run("select from", func(t *testing.T) {
-		q, args := statement.Select(func(b *statement.SelectBuilder) {
+		q, args := pgstmt.Select(func(b *pgstmt.SelectBuilder) {
 			b.Columns("id", "name")
 			b.From("users")
 		})
@@ -37,10 +37,10 @@ func TestSelect(t *testing.T) {
 	})
 
 	t.Run("select from where", func(t *testing.T) {
-		q, args := statement.Select(func(b *statement.SelectBuilder) {
+		q, args := pgstmt.Select(func(b *pgstmt.SelectBuilder) {
 			b.Columns("id", "name")
 			b.From("users")
-			b.Where(func(b *statement.WhereBuilder) {
+			b.Where(func(b *pgstmt.WhereBuilder) {
 				b.Eq("id", 1)
 			})
 		})

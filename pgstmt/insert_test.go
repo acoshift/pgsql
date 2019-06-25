@@ -1,17 +1,17 @@
-package statement_test
+package pgstmt_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/acoshift/pgsql/statement"
+	"github.com/acoshift/pgsql/pgstmt"
 )
 
 func TestInsert(t *testing.T) {
 	t.Parallel()
 
-	q, args := statement.Insert(func(b *statement.InsertBuilder) {
+	q, args := pgstmt.Insert(func(b *pgstmt.InsertBuilder) {
 		b.Into("users")
 		b.Columns("username", "name", "created_at")
 		b.Value("tester1", "Tester 1", "now()")

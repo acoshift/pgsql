@@ -1,4 +1,4 @@
-package statement
+package pgstmt
 
 func Select(f func(b *SelectBuilder)) (string, []interface{}) {
 	var b SelectBuilder

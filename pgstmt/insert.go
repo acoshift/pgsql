@@ -1,4 +1,4 @@
-package statement
+package pgstmt
 
 func Insert(f func(b *InsertBuilder)) (string, []interface{}) {
 	var b InsertBuilder
