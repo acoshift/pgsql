@@ -55,4 +55,11 @@ func TestJSON(t *testing.T) {
 	if obj.A != "test" || obj.B != 7 {
 		t.Fatal("invalid object scanner")
 	}
+
+	obj.A = ""
+	obj.B = 0
+	err = db.QueryRow(`select null`).Scan(pgsql.JSON(&obj))
+	if err != nil {
+		t.Fatalf("sql error; %v", err)
+	}
 }
