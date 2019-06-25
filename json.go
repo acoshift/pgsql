@@ -19,7 +19,11 @@ type jsonValue struct {
 	value interface{}
 }
 
-func (obj *jsonValue) Scan(src interface{}) error {
+func (v *jsonValue) Scan(src interface{}) error {
+	if src == nil {
+		return nil
+	}
+
 	var b []byte
 	switch p := src.(type) {
 	case []byte:
@@ -29,9 +33,9 @@ func (obj *jsonValue) Scan(src interface{}) error {
 	default:
 		return fmt.Errorf("pgsql: JSON not support scan source")
 	}
-	return json.Unmarshal(b, obj.value)
+	return json.Unmarshal(b, v.value)
 }
 
-func (obj jsonValue) Value() (driver.Value, error) {
-	return json.Marshal(obj.value)
+func (v jsonValue) Value() (driver.Value, error) {
+	return json.Marshal(v.value)
 }
