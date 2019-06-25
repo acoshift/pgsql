@@ -14,6 +14,7 @@ type SelectBuilder struct {
 	columns group
 	from    string
 	where   WhereBuilder
+	order   group
 }
 
 func (b *SelectBuilder) Columns(col ...string) {
@@ -25,13 +26,21 @@ func (b *SelectBuilder) From(sql string) {
 }
 
 func (b *SelectBuilder) Where(f func(b *WhereBuilder)) {
-	b.where.ops.sep = "and"
+	b.where.ops.sep = " and "
 	f(&b.where)
+}
+
+func (b *SelectBuilder) OrderBy(col string, direction string) {
+	p := col
+	if direction != "" {
+		p += " " + direction
+	}
+	b.order.push(p)
 }
 
 func (b *SelectBuilder) build() (string, []interface{}) {
 	if !b.columns.empty() {
-		b.push(b.columns)
+		b.push(&b.columns)
 	}
 	if b.from != "" {
 		b.push("from")
@@ -39,7 +48,11 @@ func (b *SelectBuilder) build() (string, []interface{}) {
 	}
 	if !b.where.ops.empty() {
 		b.push("where")
-		b.push(b.where.ops)
+		b.push(&b.where)
+	}
+	if !b.order.empty() {
+		b.push("order by")
+		b.push(&b.order)
 	}
 	return b.builder.build()
 }

@@ -5,12 +5,20 @@ import (
 	"strings"
 )
 
+type extractor interface {
+	extract() []interface{}
+}
+
 type builder struct {
 	q []interface{}
 }
 
 func (b *builder) push(q ...interface{}) {
 	b.q = append(b.q, q...)
+}
+
+func (b *builder) pushFirst(q ...interface{}) {
+	b.q = append(q, b.q...)
 }
 
 func (b *builder) build() (string, []interface{}) {
@@ -24,15 +32,17 @@ func (b *builder) build() (string, []interface{}) {
 			switch x := x.(type) {
 			case string:
 				q = append(q, x)
+			case extractor:
+				q = append(q, f(x.extract(), " "))
 			case argWrapper:
 				i++
 				q = append(q, "$"+strconv.Itoa(i))
 				args = append(args, x.value)
-			case group:
+			case *group:
 				if !x.empty() {
 					q = append(q, f(x.q, x.getSep()))
 				}
-			case parenGroup:
+			case *parenGroup:
 				if !x.empty() {
 					q = append(q, "("+f(x.q, x.getSep())+")")
 				}
@@ -57,7 +67,7 @@ type group struct {
 	sep string
 }
 
-func (b group) getSep() string {
+func (b *group) getSep() string {
 	if b.sep == "" {
 		return ", "
 	}

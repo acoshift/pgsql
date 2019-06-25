@@ -29,7 +29,7 @@ func (b *InsertBuilder) Value(value ...interface{}) {
 	for _, v := range value {
 		x.push(arg(v))
 	}
-	b.values.push(x)
+	b.values.push(&x)
 }
 
 func (b *InsertBuilder) Returning(field ...string) {
@@ -38,15 +38,15 @@ func (b *InsertBuilder) Returning(field ...string) {
 
 func (b *InsertBuilder) build() (string, []interface{}) {
 	if !b.columns.empty() {
-		b.push(b.columns)
+		b.push(&b.columns)
 	}
 	if !b.values.empty() {
 		b.push("values")
-		b.push(b.values)
+		b.push(&b.values)
 	}
 	if !b.returning.empty() {
 		b.push("returning")
-		b.push(b.returning)
+		b.push(&b.returning)
 	}
 	return b.builder.build()
 }

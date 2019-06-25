@@ -36,17 +36,19 @@ func TestSelect(t *testing.T) {
 		assert.Empty(t, args)
 	})
 
-	t.Run("select from where", func(t *testing.T) {
+	t.Run("select from where order", func(t *testing.T) {
 		q, args := pgstmt.Select(func(b *pgstmt.SelectBuilder) {
 			b.Columns("id", "name")
 			b.From("users")
 			b.Where(func(b *pgstmt.WhereBuilder) {
 				b.Eq("id", 1)
 			})
+			b.OrderBy("created_at", "asc")
+			b.OrderBy("id", "desc")
 		})
 
 		assert.Equal(t,
-			"select id, name from users where (id = $1)",
+			"select id, name from users where ((id = $1)) order by created_at asc, id desc",
 			q,
 		)
 		assert.EqualValues(t,

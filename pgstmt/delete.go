@@ -20,12 +20,12 @@ func (b *DeleteBuilder) From(table string) {
 
 func (b *DeleteBuilder) Where(f func(b *WhereBuilder)) {
 	var x WhereBuilder
-	x.ops.sep = "and"
+	x.ops.sep = " and "
 	f(&x)
 
 	if !x.ops.empty() {
 		b.push("where")
-		b.push(x.ops)
+		b.push(&x)
 	}
 }
 
@@ -36,7 +36,7 @@ func (b *DeleteBuilder) Returning(field ...string) {
 func (b *DeleteBuilder) build() (string, []interface{}) {
 	if !b.returning.empty() {
 		b.push("returning")
-		b.push(b.returning)
+		b.push(&b.returning)
 	}
 	return b.builder.build()
 }

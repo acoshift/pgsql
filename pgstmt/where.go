@@ -3,14 +3,14 @@ package pgstmt
 type WhereBuilder struct {
 	builder
 
-	ops group
+	ops parenGroup
 }
 
 func (b *WhereBuilder) Op(field, op string, value interface{}) {
 	var x parenGroup
 	x.sep = " "
 	x.push(field, op, arg(value))
-	b.ops.push(x)
+	b.ops.push(&x)
 }
 
 func (b *WhereBuilder) Eq(field string, value interface{}) {
@@ -47,11 +47,16 @@ func (b *WhereBuilder) ILike(field string, value interface{}) {
 
 func (b *WhereBuilder) Or(f func(b *WhereBuilder)) {
 	var x WhereBuilder
-	x.ops.sep = "and"
+	x.ops.sep = " and "
 	f(&x)
 
 	if !x.ops.empty() {
 		b.push("or")
-		b.push(x.ops)
+		b.push(&x.ops)
 	}
+}
+
+func (b *WhereBuilder) extract() []interface{} {
+	b.pushFirst(&b.ops)
+	return b.builder.q
 }
