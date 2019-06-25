@@ -13,7 +13,7 @@ func TestJSONObject(t *testing.T) {
 		drop table if exists test_pgsql_jsonobject;
 		create table test_pgsql_jsonobject (
 			id int primary key,
-			value jsonb
+			value json
 		);
 	`)
 	if err != nil {
