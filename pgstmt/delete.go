@@ -1,11 +1,11 @@
 package pgstmt
 
-func Delete(f func(b *DeleteBuilder)) (string, []interface{}) {
+func Delete(f func(b *DeleteBuilder)) *Result {
 	var b DeleteBuilder
 	b.push("delete")
 	f(&b)
 
-	return b.build()
+	return newResult(b.build())
 }
 
 type DeleteBuilder struct {

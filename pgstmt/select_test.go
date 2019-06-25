@@ -14,7 +14,7 @@ func TestSelect(t *testing.T) {
 	t.Run("only select", func(t *testing.T) {
 		q, args := pgstmt.Select(func(b *pgstmt.SelectBuilder) {
 			b.Columns("1")
-		})
+		}).SQL()
 
 		assert.Equal(t,
 			"select 1",
@@ -27,7 +27,7 @@ func TestSelect(t *testing.T) {
 		q, args := pgstmt.Select(func(b *pgstmt.SelectBuilder) {
 			b.Columns("id", "name")
 			b.From("users")
-		})
+		}).SQL()
 
 		assert.Equal(t,
 			"select id, name from users",
@@ -45,7 +45,7 @@ func TestSelect(t *testing.T) {
 			})
 			b.OrderBy("created_at", "asc")
 			b.OrderBy("id", "desc")
-		})
+		}).SQL()
 
 		assert.Equal(t,
 			"select id, name from users where ((id = $1)) order by created_at asc, id desc",

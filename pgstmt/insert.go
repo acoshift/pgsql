@@ -1,11 +1,11 @@
 package pgstmt
 
-func Insert(f func(b *InsertBuilder)) (string, []interface{}) {
+func Insert(f func(b *InsertBuilder)) *Result {
 	var b InsertBuilder
 	b.push("insert")
 	f(&b)
 
-	return b.build()
+	return newResult(b.build())
 }
 
 type InsertBuilder struct {

@@ -1,11 +1,11 @@
 package pgstmt
 
-func Select(f func(b *SelectBuilder)) (string, []interface{}) {
+func Select(f func(b *SelectBuilder)) *Result {
 	var b SelectBuilder
 	b.push("select")
 	f(&b)
 
-	return b.build()
+	return newResult(b.build())
 }
 
 type SelectBuilder struct {
