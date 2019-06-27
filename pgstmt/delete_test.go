@@ -11,12 +11,12 @@ import (
 func TestDelete(t *testing.T) {
 	t.Parallel()
 
-	q, args := pgstmt.Delete(func(b *pgstmt.DeleteBuilder) {
+	q, args := pgstmt.Delete(func(b pgstmt.DeleteStatement) {
 		b.From("users")
-		b.Where(func(b *pgstmt.WhereBuilder) {
+		b.Where(func(b pgstmt.Where) {
 			b.Eq("username", "test")
 			b.Eq("is_active", false)
-			b.Or(func(b *pgstmt.WhereBuilder) {
+			b.Or(func(b pgstmt.Where) {
 				b.Gt("age", 20)
 				b.Le("age", 30)
 			})

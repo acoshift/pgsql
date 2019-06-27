@@ -12,7 +12,7 @@ func TestSelect(t *testing.T) {
 	t.Parallel()
 
 	t.Run("only select", func(t *testing.T) {
-		q, args := pgstmt.Select(func(b *pgstmt.SelectBuilder) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("1")
 		}).SQL()
 
@@ -24,7 +24,7 @@ func TestSelect(t *testing.T) {
 	})
 
 	t.Run("select from", func(t *testing.T) {
-		q, args := pgstmt.Select(func(b *pgstmt.SelectBuilder) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("id", "name")
 			b.From("users")
 		}).SQL()
@@ -37,10 +37,10 @@ func TestSelect(t *testing.T) {
 	})
 
 	t.Run("select from where order", func(t *testing.T) {
-		q, args := pgstmt.Select(func(b *pgstmt.SelectBuilder) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("id", "name")
 			b.From("users")
-			b.Where(func(b *pgstmt.WhereBuilder) {
+			b.Where(func(b pgstmt.Where) {
 				b.Eq("id", 1)
 			})
 			b.OrderBy("created_at", "asc")

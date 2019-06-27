@@ -1,58 +1,96 @@
 package pgstmt
 
-func Select(f func(b *SelectBuilder)) *Result {
-	var b SelectBuilder
+// Select builds select statement
+func Select(f func(b SelectStatement)) *Result {
+	var st selectStmt
+	f(&st)
+
+	var b builder
 	b.push("select")
-	f(&b)
+	if !st.columns.empty() {
+		b.push(&st.columns)
+	}
+	if st.from != "" {
+		b.push("from")
+		b.push(st.from)
+	}
+	if !st.where.empty() {
+		b.push("where")
+		b.push(st.where.build()...)
+	}
+	if !st.order.empty() {
+		b.push("order by")
+		b.push(&st.order)
+	}
 
 	return newResult(b.build())
 }
 
-type SelectBuilder struct {
-	builder
+// SelectStatement is the select statement builder
+type SelectStatement interface {
+	Columns(col ...string)
+	From(sql string)
+	Where(f func(b Where))
+	OrderBy(col string, direction string) OrderBy
+}
 
+type selectStmt struct {
 	columns group
 	from    string
-	where   WhereBuilder
+	where   where
 	order   group
+	nulls   string // first, last
 }
 
-func (b *SelectBuilder) Columns(col ...string) {
-	b.columns.pushString(col...)
+func (st *selectStmt) Columns(col ...string) {
+	st.columns.pushString(col...)
 }
 
-func (b *SelectBuilder) From(sql string) {
-	b.from = sql
+func (st *selectStmt) From(sql string) {
+	st.from = sql
 }
 
-func (b *SelectBuilder) Where(f func(b *WhereBuilder)) {
-	b.where.ops.sep = " and "
-	f(&b.where)
+func (st *selectStmt) Where(f func(b Where)) {
+	f(&st.where)
 }
 
-func (b *SelectBuilder) OrderBy(col string, direction string) {
-	p := col
-	if direction != "" {
-		p += " " + direction
+func (st *selectStmt) OrderBy(col string, op string) OrderBy {
+	p := orderBy{
+		col: col,
+		op:  op,
 	}
-	b.order.push(p)
+	st.order.push(&p)
+	return &p
 }
 
-func (b *SelectBuilder) build() (string, []interface{}) {
-	if !b.columns.empty() {
-		b.push(&b.columns)
+type OrderBy interface {
+	NullsFirst()
+	NullsLast()
+}
+
+type orderBy struct {
+	col   string
+	op    string
+	nulls string
+}
+
+func (st *orderBy) NullsFirst() {
+	st.nulls = "first"
+}
+
+func (st *orderBy) NullsLast() {
+	st.nulls = "last"
+}
+
+func (st *orderBy) build() []interface{} {
+	var b builder
+	b.push(st.col)
+	if st.op != "" {
+		b.push(st.op)
 	}
-	if b.from != "" {
-		b.push("from")
-		b.push(b.from)
+	if st.nulls != "" {
+		b.push("nulls")
+		b.push(st.nulls)
 	}
-	if !b.where.ops.empty() {
-		b.push("where")
-		b.push(&b.where)
-	}
-	if !b.order.empty() {
-		b.push("order by")
-		b.push(&b.order)
-	}
-	return b.builder.build()
+	return b.q
 }

@@ -1,42 +1,45 @@
 package pgstmt
 
-func Delete(f func(b *DeleteBuilder)) *Result {
-	var b DeleteBuilder
+// Delete builds delete statement
+func Delete(f func(b DeleteStatement)) *Result {
+	var st deleteStmt
+	f(&st)
+
+	var b builder
 	b.push("delete")
-	f(&b)
+	b.push("from", st.from)
+	if !st.where.empty() {
+		b.push("where")
+		b.push(st.where.build()...)
+	}
+	if !st.returning.empty() {
+		b.push("returning")
+		b.push(&st.returning)
+	}
 
 	return newResult(b.build())
 }
 
-type DeleteBuilder struct {
-	builder
+type DeleteStatement interface {
+	From(table string)
+	Where(f func(b Where))
+	Returning(col ...string)
+}
 
+type deleteStmt struct {
+	from      string
+	where     where
 	returning group
 }
 
-func (b *DeleteBuilder) From(table string) {
-	b.push("from", table)
+func (st *deleteStmt) From(table string) {
+	st.from = table
 }
 
-func (b *DeleteBuilder) Where(f func(b *WhereBuilder)) {
-	var x WhereBuilder
-	x.ops.sep = " and "
-	f(&x)
-
-	if !x.ops.empty() {
-		b.push("where")
-		b.push(&x)
-	}
+func (st *deleteStmt) Where(f func(b Where)) {
+	f(&st.where)
 }
 
-func (b *DeleteBuilder) Returning(field ...string) {
-	b.returning.pushString(field...)
-}
-
-func (b *DeleteBuilder) build() (string, []interface{}) {
-	if !b.returning.empty() {
-		b.push("returning")
-		b.push(&b.returning)
-	}
-	return b.builder.build()
+func (st *deleteStmt) Returning(col ...string) {
+	st.returning.pushString(col...)
 }
