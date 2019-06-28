@@ -83,5 +83,7 @@ func convertToString(x interface{}) string {
 		return strconv.FormatBool(x)
 	case notArg:
 		return convertToString(x.value)
+	case defaultValue:
+		return "default"
 	}
 }

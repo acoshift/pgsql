@@ -11,7 +11,15 @@ func Arg(v interface{}) interface{} {
 	if _, ok := v.(any); ok {
 		return v
 	}
-	return arg{v}
+	switch v.(type) {
+	default:
+		return arg{v}
+	case arg:
+	case notArg:
+	case any:
+	case defaultValue:
+	}
+	return v
 }
 
 type arg struct {
@@ -38,3 +46,8 @@ func Any(v interface{}) interface{} {
 type any struct {
 	value interface{}
 }
+
+// Default use for insert default value
+var Default interface{} = defaultValue{}
+
+type defaultValue struct{}
