@@ -52,4 +52,35 @@ func TestInsert(t *testing.T) {
 		)
 		assert.Empty(t, args)
 	})
+
+	t.Run("insert on conflict do update", func(t *testing.T) {
+		q, args := pgstmt.Insert(func(b pgstmt.InsertStatement) {
+			b.Into("users")
+			b.Columns("username", "email")
+			b.Value("tester1", "tester1@localhost")
+			b.OnConflict("username").DoUpdate(func(b pgstmt.UpdateStatement) {
+				b.Set("email").ToRaw("excluded.email")
+				b.Set("updated_at").ToRaw("now()")
+			})
+			b.Returning("id")
+		}).SQL()
+
+		assert.Equal(t,
+			stripSpace(`
+				insert into users (username, email)
+				values ($1, $2)
+				on conflict (username) do update
+				set email = excluded.email,
+					updated_at = now()
+				returning id
+			`),
+			q,
+		)
+		assert.EqualValues(t,
+			[]interface{}{
+				"tester1", "tester1@localhost",
+			},
+			args,
+		)
+	})
 }

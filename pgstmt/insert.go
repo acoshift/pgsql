@@ -17,13 +17,13 @@ type InsertStatement interface {
 	Value(value ...interface{})
 	Values(values ...interface{})
 	Select(f func(b SelectStatement))
-	OnConflict(target ...string) ConflictAction
+	OnConflict(target ...string) OnConflict
 	Returning(col ...string)
 }
 
-type ConflictAction interface {
+type OnConflict interface {
 	DoNothing()
-	// DoUpdate(f func())
+	DoUpdate(f func(b UpdateStatement))
 }
 
 type insertStmt struct {
@@ -31,7 +31,7 @@ type insertStmt struct {
 	columns         parenGroup
 	overridingValue string
 	defaultValues   bool
-	conflict        *conflictAction
+	conflict        *conflict
 	values          group
 	selects         *selectStmt
 	returning       group
@@ -77,8 +77,8 @@ func (st *insertStmt) Select(f func(b SelectStatement)) {
 	st.selects = &x
 }
 
-func (st *insertStmt) OnConflict(target ...string) ConflictAction {
-	st.conflict = &conflictAction{targets: target}
+func (st *insertStmt) OnConflict(target ...string) OnConflict {
+	st.conflict = &conflict{targets: target}
 	return st.conflict
 }
 
@@ -115,6 +115,9 @@ func (st *insertStmt) make() *buffer {
 		if st.conflict.doNothing {
 			b.push("do nothing")
 		}
+		if st.conflict.doUpdate != nil {
+			b.push("do", st.conflict.doUpdate.make())
+		}
 	}
 	if !st.returning.empty() {
 		b.push("returning", &st.returning)
@@ -123,12 +126,18 @@ func (st *insertStmt) make() *buffer {
 	return &b
 }
 
-type conflictAction struct {
+type conflict struct {
 	targets   []string
 	doNothing bool
-	// TODO: add doUpdate
+	doUpdate  *updateStmt
 }
 
-func (b *conflictAction) DoNothing() {
-	b.doNothing = true
+func (st *conflict) DoNothing() {
+	st.doNothing = true
+}
+
+func (st *conflict) DoUpdate(f func(b UpdateStatement)) {
+	var x updateStmt
+	f(&x)
+	st.doUpdate = &x
 }

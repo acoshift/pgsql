@@ -95,7 +95,10 @@ func (st *updateStmt) Returning(col ...string) {
 
 func (st *updateStmt) make() *buffer {
 	var b buffer
-	b.push("update", st.table)
+	b.push("update")
+	if st.table != "" {
+		b.push(st.table)
+	}
 	if !st.sets.empty() {
 		b.push("set", &st.sets)
 	}
