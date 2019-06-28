@@ -4,45 +4,7 @@ package pgstmt
 func Insert(f func(b InsertStatement)) *Result {
 	var st insertStmt
 	f(&st)
-
-	var b buffer
-	b.push("insert")
-	if st.table != "" {
-		b.push("into", st.table)
-	}
-	if !st.columns.empty() {
-		b.push(&st.columns)
-	}
-	if st.overridingValue != "" {
-		b.push("overriding")
-		b.push(st.overridingValue)
-		b.push("value")
-	}
-	if st.defaultValues {
-		b.push("default values")
-	}
-	if !st.values.empty() {
-		b.push("values")
-		b.push(&st.values)
-	}
-	if st.selects != nil {
-		b.push(st.selects.make())
-	}
-	if st.conflict != nil {
-		b.push("on conflict")
-		if len(st.conflict.targets) > 0 {
-			b.push(parenString(st.conflict.targets...))
-		}
-		if st.conflict.doNothing {
-			b.push("do nothing")
-		}
-	}
-	if !st.returning.empty() {
-		b.push("returning")
-		b.push(&st.returning)
-	}
-
-	return newResult(build(&b))
+	return newResult(build(st.make()))
 }
 
 // InsertStatement is the insert statement builder
@@ -122,6 +84,43 @@ func (st *insertStmt) OnConflict(target ...string) ConflictAction {
 
 func (st *insertStmt) Returning(col ...string) {
 	st.returning.pushString(col...)
+}
+
+func (st *insertStmt) make() *buffer {
+	var b buffer
+	b.push("insert")
+	if st.table != "" {
+		b.push("into", st.table)
+	}
+	if !st.columns.empty() {
+		b.push(&st.columns)
+	}
+	if st.overridingValue != "" {
+		b.push("overriding", st.overridingValue, "value")
+	}
+	if st.defaultValues {
+		b.push("default values")
+	}
+	if !st.values.empty() {
+		b.push("values", &st.values)
+	}
+	if st.selects != nil {
+		b.push(st.selects.make())
+	}
+	if st.conflict != nil {
+		b.push("on conflict")
+		if len(st.conflict.targets) > 0 {
+			b.push(parenString(st.conflict.targets...))
+		}
+		if st.conflict.doNothing {
+			b.push("do nothing")
+		}
+	}
+	if !st.returning.empty() {
+		b.push("returning", &st.returning)
+	}
+
+	return &b
 }
 
 type conflictAction struct {

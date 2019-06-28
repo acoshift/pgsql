@@ -28,6 +28,7 @@ func (b *group) pushString(q ...string) {
 
 type parenGroup struct {
 	group
+	prefix string
 }
 
 func paren(q ...interface{}) interface{} {

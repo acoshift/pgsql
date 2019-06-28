@@ -57,7 +57,7 @@ func build(b *buffer) (string, []interface{}) {
 				}
 			case *parenGroup:
 				if !x.empty() {
-					q = append(q, "("+f(x.q, x.getSep())+")")
+					q = append(q, x.prefix+"("+f(x.q, x.getSep())+")")
 				}
 			}
 		}

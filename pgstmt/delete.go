@@ -4,20 +4,7 @@ package pgstmt
 func Delete(f func(b DeleteStatement)) *Result {
 	var st deleteStmt
 	f(&st)
-
-	var b buffer
-	b.push("delete")
-	b.push("from", st.from)
-	if !st.where.empty() {
-		b.push("where")
-		b.push(st.where.build()...)
-	}
-	if !st.returning.empty() {
-		b.push("returning")
-		b.push(&st.returning)
-	}
-
-	return newResult(build(&b))
+	return newResult(build(st.make()))
 }
 
 type DeleteStatement interface {
@@ -42,4 +29,19 @@ func (st *deleteStmt) Where(f func(b Cond)) {
 
 func (st *deleteStmt) Returning(col ...string) {
 	st.returning.pushString(col...)
+}
+
+func (st *deleteStmt) make() *buffer {
+	var b buffer
+	b.push("delete from", st.from)
+	if !st.where.empty() {
+		b.push("where")
+		b.push(st.where.build()...)
+	}
+	if !st.returning.empty() {
+		b.push("returning")
+		b.push(&st.returning)
+	}
+
+	return &b
 }
