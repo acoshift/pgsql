@@ -25,6 +25,9 @@ func Insert(f func(b InsertStatement)) *Result {
 		b.push("values")
 		b.push(&st.values)
 	}
+	if st.selects != nil {
+		b.push(st.selects.make())
+	}
 	if st.conflict != nil {
 		b.push("on conflict")
 		if len(st.conflict.targets) > 0 {
@@ -51,6 +54,7 @@ type InsertStatement interface {
 	DefaultValues()
 	Value(value ...interface{})
 	Values(values ...interface{})
+	Select(f func(b SelectStatement))
 	OnConflict(target ...string) ConflictAction
 	Returning(col ...string)
 }
@@ -67,6 +71,7 @@ type insertStmt struct {
 	defaultValues   bool
 	conflict        *conflictAction
 	values          group
+	selects         *selectStmt
 	returning       group
 }
 
@@ -102,6 +107,12 @@ func (st *insertStmt) Values(values ...interface{}) {
 	for _, value := range values {
 		st.Value(value)
 	}
+}
+
+func (st *insertStmt) Select(f func(b SelectStatement)) {
+	var x selectStmt
+	f(&x)
+	st.selects = &x
 }
 
 func (st *insertStmt) OnConflict(target ...string) ConflictAction {

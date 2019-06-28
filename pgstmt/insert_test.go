@@ -33,4 +33,23 @@ func TestInsert(t *testing.T) {
 			args,
 		)
 	})
+
+	t.Run("insert select", func(t *testing.T) {
+		q, args := pgstmt.Insert(func(b pgstmt.InsertStatement) {
+			b.Into("films")
+			b.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("*")
+				b.From("tmp_films")
+				b.Where(func(b pgstmt.Cond) {
+					b.LtRaw("date_prod", "2004-05-07")
+				})
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"insert into films select * from tmp_films where (date_prod < 2004-05-07)",
+			q,
+		)
+		assert.Empty(t, args)
+	})
 }
