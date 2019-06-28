@@ -1,7 +1,7 @@
 package pgstmt
 
-// Where is the where clause builder
-type Where interface {
+// Cond is the condition builder
+type Cond interface {
 	Op(field, op string, value interface{})
 	OpRaw(field, op string, rawValue interface{})
 	Eq(field string, value interface{})
@@ -23,105 +23,105 @@ type Where interface {
 	IsNull(field string)
 	IsNotNull(field string)
 	Raw(sql string)
-	And(f func(b Where))
-	Or(f func(b Where))
+	And(f func(b Cond))
+	Or(f func(b Cond))
 }
 
-type where struct {
+type cond struct {
 	ops    parenGroup
 	chain  buffer
 	nested bool
 }
 
-func (st *where) Op(field, op string, value interface{}) {
+func (st *cond) Op(field, op string, value interface{}) {
 	var x group
 	x.sep = " "
 	x.push(field, op, Arg(value))
 	st.ops.push(&x)
 }
 
-func (st *where) OpRaw(field, op string, rawValue interface{}) {
+func (st *cond) OpRaw(field, op string, rawValue interface{}) {
 	st.Op(field, op, NotArg(rawValue))
 }
 
-func (st *where) Eq(field string, value interface{}) {
+func (st *cond) Eq(field string, value interface{}) {
 	st.Op(field, "=", value)
 }
 
-func (st *where) EqRaw(field string, rawValue interface{}) {
+func (st *cond) EqRaw(field string, rawValue interface{}) {
 	st.Eq(field, NotArg(rawValue))
 }
 
-func (st *where) Ne(field string, value interface{}) {
+func (st *cond) Ne(field string, value interface{}) {
 	st.Op(field, "!=", value)
 }
 
-func (st *where) NeRaw(field string, rawValue interface{}) {
+func (st *cond) NeRaw(field string, rawValue interface{}) {
 	st.Ne(field, NotArg(rawValue))
 }
 
-func (st *where) Lt(field string, value interface{}) {
+func (st *cond) Lt(field string, value interface{}) {
 	st.Op(field, "<", value)
 }
 
-func (st *where) LtRaw(field string, rawValue interface{}) {
+func (st *cond) LtRaw(field string, rawValue interface{}) {
 	st.Lt(field, NotArg(rawValue))
 }
 
-func (st *where) Le(field string, value interface{}) {
+func (st *cond) Le(field string, value interface{}) {
 	st.Op(field, "<=", value)
 }
 
-func (st *where) LeRaw(field string, rawValue interface{}) {
+func (st *cond) LeRaw(field string, rawValue interface{}) {
 	st.Le(field, NotArg(rawValue))
 }
 
-func (st *where) Gt(field string, value interface{}) {
+func (st *cond) Gt(field string, value interface{}) {
 	st.Op(field, ">", value)
 }
 
-func (st *where) GtRaw(field string, rawValue interface{}) {
+func (st *cond) GtRaw(field string, rawValue interface{}) {
 	st.Gt(field, NotArg(rawValue))
 }
 
-func (st *where) Ge(field string, value interface{}) {
+func (st *cond) Ge(field string, value interface{}) {
 	st.Op(field, ">=", value)
 }
 
-func (st *where) GeRaw(field string, rawValue interface{}) {
+func (st *cond) GeRaw(field string, rawValue interface{}) {
 	st.Ge(field, NotArg(rawValue))
 }
 
-func (st *where) Like(field string, value interface{}) {
+func (st *cond) Like(field string, value interface{}) {
 	st.Op(field, "like", value)
 }
 
-func (st *where) LikeRaw(field string, rawValue interface{}) {
+func (st *cond) LikeRaw(field string, rawValue interface{}) {
 	st.Like(field, NotArg(rawValue))
 }
 
-func (st *where) ILike(field string, value interface{}) {
+func (st *cond) ILike(field string, value interface{}) {
 	st.Op(field, "ilike", value)
 }
 
-func (st *where) ILikeRaw(field string, rawValue interface{}) {
+func (st *cond) ILikeRaw(field string, rawValue interface{}) {
 	st.ILike(field, NotArg(rawValue))
 }
 
-func (st *where) IsNull(field string) {
+func (st *cond) IsNull(field string) {
 	st.ops.push(field + " is null")
 }
 
-func (st *where) IsNotNull(field string) {
+func (st *cond) IsNotNull(field string) {
 	st.ops.push(field + " is not null")
 }
 
-func (st *where) Raw(sql string) {
+func (st *cond) Raw(sql string) {
 	st.ops.push(sql)
 }
 
-func (st *where) And(f func(b Where)) {
-	var x where
+func (st *cond) And(f func(b Cond)) {
+	var x cond
 	x.ops.sep = " and "
 	x.nested = true
 	f(&x)
@@ -132,8 +132,8 @@ func (st *where) And(f func(b Where)) {
 	}
 }
 
-func (st *where) Or(f func(b Where)) {
-	var x where
+func (st *cond) Or(f func(b Cond)) {
+	var x cond
 	x.ops.sep = " and "
 	x.nested = true
 	f(&x)
@@ -144,11 +144,11 @@ func (st *where) Or(f func(b Where)) {
 	}
 }
 
-func (st *where) empty() bool {
+func (st *cond) empty() bool {
 	return st.ops.empty() /* && st.chain.empty() */
 }
 
-func (st *where) build() []interface{} {
+func (st *cond) build() []interface{} {
 	if st.ops.empty() {
 		return nil
 	}

@@ -22,13 +22,13 @@ func Delete(f func(b DeleteStatement)) *Result {
 
 type DeleteStatement interface {
 	From(table string)
-	Where(f func(b Where))
+	Where(f func(b Cond))
 	Returning(col ...string)
 }
 
 type deleteStmt struct {
 	from      string
-	where     where
+	where     cond
 	returning group
 }
 
@@ -36,7 +36,7 @@ func (st *deleteStmt) From(table string) {
 	st.from = table
 }
 
-func (st *deleteStmt) Where(f func(b Where)) {
+func (st *deleteStmt) Where(f func(b Cond)) {
 	f(&st.where)
 }
 

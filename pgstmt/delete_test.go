@@ -13,10 +13,10 @@ func TestDelete(t *testing.T) {
 
 	q, args := pgstmt.Delete(func(b pgstmt.DeleteStatement) {
 		b.From("users")
-		b.Where(func(b pgstmt.Where) {
+		b.Where(func(b pgstmt.Cond) {
 			b.Eq("username", "test")
 			b.Eq("is_active", false)
-			b.Or(func(b pgstmt.Where) {
+			b.Or(func(b pgstmt.Cond) {
 				b.Gt("age", pgstmt.Arg(20))
 				b.Le("age", pgstmt.Arg(30))
 			})

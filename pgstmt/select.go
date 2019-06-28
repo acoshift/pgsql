@@ -18,7 +18,9 @@ type SelectStatement interface {
 	FullOuterJoin(table string) Join
 	LeftJoin(table string) Join
 	RightJoin(table string) Join
-	Where(f func(b Where))
+	Where(f func(b Cond))
+	GroupBy(col ...string)
+	Having(f func(b Cond))
 	OrderBy(col string) OrderBy
 	Limit(n int64)
 	Offset(n int64)
@@ -32,7 +34,7 @@ type OrderBy interface {
 }
 
 type Join interface {
-	On(f func(b Where))
+	On(f func(b Cond))
 	Using(col ...string)
 }
 
@@ -40,9 +42,10 @@ type selectStmt struct {
 	columns group
 	from    group
 	joins   buffer
-	where   where
-	order   group
-	nulls   string // first, last
+	where   cond
+	groupBy group
+	having  cond
+	orderBy group
 	limit   *int64
 	offset  *int64
 }
@@ -112,15 +115,23 @@ func (st *selectStmt) RightJoin(table string) Join {
 	return st.join("right join", table)
 }
 
-func (st *selectStmt) Where(f func(b Where)) {
+func (st *selectStmt) Where(f func(b Cond)) {
 	f(&st.where)
+}
+
+func (st *selectStmt) GroupBy(col ...string) {
+	st.groupBy.pushString(col...)
+}
+
+func (st *selectStmt) Having(f func(b Cond)) {
+	f(&st.having)
 }
 
 func (st *selectStmt) OrderBy(col string) OrderBy {
 	p := orderBy{
 		col: col,
 	}
-	st.order.push(&p)
+	st.orderBy.push(&p)
 	return &p
 }
 
@@ -149,8 +160,16 @@ func (st *selectStmt) make() *buffer {
 	if !st.where.empty() {
 		b.push("where", &st.where)
 	}
-	if !st.order.empty() {
-		b.push("order by", &st.order)
+	if !st.groupBy.empty() {
+		var p parenGroup
+		p.push(&st.groupBy)
+		b.push("group by", &p)
+	}
+	if !st.having.empty() {
+		b.push("having", &st.having)
+	}
+	if !st.orderBy.empty() {
+		b.push("order by", &st.orderBy)
 	}
 	if st.limit != nil {
 		b.push("limit", *st.limit)
@@ -166,10 +185,10 @@ type join struct {
 	typ   string // join, inner join, full outer join, left join, right join
 	table string
 	using group
-	on    where
+	on    cond
 }
 
-func (st *join) On(f func(b Where)) {
+func (st *join) On(f func(b Cond)) {
 	f(&st.on)
 }
 

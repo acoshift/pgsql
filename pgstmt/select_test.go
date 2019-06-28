@@ -48,7 +48,7 @@ func TestSelect(t *testing.T) {
 										  'timestamp', m.created_at)
 					`))
 					b.From("messages m")
-					b.Where(func(b pgstmt.Where) {
+					b.Where(func(b pgstmt.Cond) {
 						b.EqRaw("m.id", "p.id")
 					})
 					b.OrderBy("created_at").Desc().NullsFirst()
@@ -56,7 +56,7 @@ func TestSelect(t *testing.T) {
 					b.Offset(2)
 				}, "msg")
 				b.From("profile p")
-				b.LeftJoin("noti n").On(func(b pgstmt.Where) {
+				b.LeftJoin("noti n").On(func(b pgstmt.Cond) {
 					b.EqRaw("n.id", "p.id")
 					b.Eq("n.user_id", 1)
 				})
@@ -90,12 +90,12 @@ func TestSelect(t *testing.T) {
 		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("id", "name")
 			b.From("users")
-			b.Where(func(b pgstmt.Where) {
+			b.Where(func(b pgstmt.Cond) {
 				b.Eq("id", 3)
 				b.Eq("name", "test")
-				b.And(func(b pgstmt.Where) {
+				b.And(func(b pgstmt.Cond) {
 					b.Eq("age", 15)
-					b.Or(func(b pgstmt.Where) {
+					b.Or(func(b pgstmt.Cond) {
 						b.Eq("age", 18)
 					})
 				})
@@ -123,7 +123,7 @@ func TestSelect(t *testing.T) {
 		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("id", "name")
 			b.From("users")
-			b.Where(func(b pgstmt.Where) {
+			b.Where(func(b pgstmt.Cond) {
 				b.Eq("id", 1)
 			})
 			b.OrderBy("created_at").Asc().NullsLast()
@@ -146,7 +146,7 @@ func TestSelect(t *testing.T) {
 		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("id", "name")
 			b.From("users")
-			b.Where(func(b pgstmt.Where) {
+			b.Where(func(b pgstmt.Cond) {
 				b.Eq("id", 1)
 			})
 			b.OrderBy("id")
@@ -184,7 +184,7 @@ func TestSelect(t *testing.T) {
 		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("id", "name")
 			b.From("users")
-			b.LeftJoin("roles").On(func(b pgstmt.Where) {
+			b.LeftJoin("roles").On(func(b pgstmt.Cond) {
 				b.EqRaw("users.id", "roles.id")
 			})
 		}).SQL()
@@ -205,6 +205,23 @@ func TestSelect(t *testing.T) {
 
 		assert.Equal(t,
 			"select id, name from users inner join roles using (id, name)",
+			q,
+		)
+		assert.Empty(t, args)
+	})
+
+	t.Run("group by having", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("city", "max(temp_lo)")
+			b.From("weather")
+			b.GroupBy("city")
+			b.Having(func(b pgstmt.Cond) {
+				b.LtRaw("max(temp_lo)", 40)
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select city, max(temp_lo) from weather group by (city) having (max(temp_lo) < 40)",
 			q,
 		)
 		assert.Empty(t, args)
