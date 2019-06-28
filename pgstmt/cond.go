@@ -22,6 +22,7 @@ type Cond interface {
 	ILikeRaw(field string, rawValue interface{})
 	In(field string, value ...interface{})
 	InRaw(field string, value ...interface{})
+	InSelect(field string, f func(b SelectStatement))
 	NotIn(field string, value ...interface{})
 	NotInRaw(field string, value ...interface{})
 	IsNull(field string)
@@ -135,6 +136,16 @@ func (st *cond) InRaw(field string, value ...interface{}) {
 	x.sep = " "
 	x.push(field, "in", paren(&p))
 	st.ops.push(&x)
+}
+
+func (st *cond) InSelect(field string, f func(b SelectStatement)) {
+	var x selectStmt
+	f(&x)
+
+	var p group
+	p.sep = " "
+	p.push(field, "in", paren(x.make()))
+	st.ops.push(&p)
 }
 
 func (st *cond) NotIn(field string, value ...interface{}) {

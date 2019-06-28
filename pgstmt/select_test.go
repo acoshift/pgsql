@@ -271,6 +271,25 @@ func TestSelect(t *testing.T) {
 		)
 	})
 
+	t.Run("select in select", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("*")
+			b.From("table")
+			b.Where(func(b pgstmt.Cond) {
+				b.InSelect("id", func(b pgstmt.SelectStatement) {
+					b.Columns("id")
+					b.From("table2")
+				})
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select * from table where (id in (select id from table2))",
+			q,
+		)
+		assert.Empty(t, args)
+	})
+
 	t.Run("select not in", func(t *testing.T) {
 		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("*")
