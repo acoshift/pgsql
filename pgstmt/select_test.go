@@ -72,9 +72,9 @@ func TestSelect(t *testing.T) {
 											where (m.id = p.id)
 											order by created_at desc nulls first
 											limit 1
-											offset 2) as msg
+											offset 2) msg
 					  from profile p
-					  left join noti n on (n.id = p.id and n.user_id = $1)) as t
+					  left join noti n on (n.id = p.id and n.user_id = $1)) t
 			`),
 			q,
 		)

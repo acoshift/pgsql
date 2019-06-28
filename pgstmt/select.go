@@ -53,7 +53,7 @@ func (st *selectStmt) ColumnSelect(f func(b SelectStatement), as string) {
 	p.push(x.make())
 	b.push(&p)
 	if as != "" {
-		b.push("as", as)
+		b.push(as)
 	}
 	st.columns.push(&b)
 }
@@ -71,7 +71,7 @@ func (st *selectStmt) FromSelect(f func(b SelectStatement), as string) {
 	p.push(x.make())
 	b.push(&p)
 	if as != "" {
-		b.push("as", as)
+		b.push(as)
 	}
 	st.from.push(&b)
 }
