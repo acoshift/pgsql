@@ -1,0 +1,4 @@
+root = true
+
+[*.go]
+tab_width = 4

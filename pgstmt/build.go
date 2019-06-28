@@ -1,80 +1,36 @@
 package pgstmt
 
 import (
-	"context"
-	"database/sql"
+	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/acoshift/pgsql/pgctx"
 )
 
-type Result struct {
-	query string
-	args  []interface{}
-}
-
-func newResult(query string, args []interface{}) *Result {
-	return &Result{query, args}
-}
-
-func (r *Result) SQL() (query string, args interface{}) {
-	return r.query, r.args
-}
-
-func (r *Result) QueryRow(f func(string, ...interface{}) *sql.Row) *sql.Row {
-	return f(r.query, r.args...)
-}
-
-func (r *Result) Query(f func(string, ...interface{}) (*sql.Rows, error)) (*sql.Rows, error) {
-	return f(r.query, r.args...)
-}
-
-func (r *Result) Exec(f func(string, ...interface{}) (sql.Result, error)) (sql.Result, error) {
-	return f(r.query, r.args...)
-}
-
-func (r *Result) QueryRowContext(ctx context.Context, f func(context.Context, string, ...interface{}) *sql.Row) *sql.Row {
-	return f(ctx, r.query, r.args...)
-}
-
-func (r *Result) QueryContext(ctx context.Context, f func(context.Context, string, ...interface{}) (*sql.Rows, error)) (*sql.Rows, error) {
-	return f(ctx, r.query, r.args...)
-}
-
-func (r *Result) ExecContext(ctx context.Context, f func(context.Context, string, ...interface{}) (sql.Result, error)) (sql.Result, error) {
-	return f(ctx, r.query, r.args...)
-}
-
-func (r *Result) QueryRowWith(ctx context.Context) *sql.Row {
-	return pgctx.QueryRow(ctx, r.query, r.args...)
-}
-
-func (r *Result) QueryWith(ctx context.Context) (*sql.Rows, error) {
-	return pgctx.Query(ctx, r.query, r.args...)
-}
-
-func (r *Result) ExecWith(ctx context.Context) (sql.Result, error) {
-	return pgctx.Exec(ctx, r.query, r.args...)
-}
-
-type extractor interface {
-	extract() []interface{}
-}
-
-type builder struct {
+type buffer struct {
 	q []interface{}
 }
 
-func (b *builder) push(q ...interface{}) {
+func (b *buffer) push(q ...interface{}) {
 	b.q = append(b.q, q...)
 }
 
-func (b *builder) pushFirst(q ...interface{}) {
+func (b *buffer) pushFirst(q ...interface{}) {
 	b.q = append(q, b.q...)
 }
 
-func (b *builder) build() (string, []interface{}) {
+func (b *buffer) empty() bool {
+	return len(b.q) == 0
+}
+
+func (b *buffer) build() []interface{} {
+	return b.q
+}
+
+type builder interface {
+	build() []interface{}
+}
+
+func build(b *buffer) (string, []interface{}) {
 	var args []interface{}
 	var i int
 
@@ -83,11 +39,11 @@ func (b *builder) build() (string, []interface{}) {
 		var q []string
 		for _, x := range p {
 			switch x := x.(type) {
-			case string:
-				q = append(q, x)
-			case extractor:
-				q = append(q, f(x.extract(), " "))
-			case argWrapper:
+			default:
+				q = append(q, convertToString(x))
+			case builder:
+				q = append(q, f(x.build(), " "))
+			case arg:
 				i++
 				q = append(q, "$"+strconv.Itoa(i))
 				args = append(args, x.value)
@@ -107,40 +63,21 @@ func (b *builder) build() (string, []interface{}) {
 	return query, args
 }
 
-func arg(v interface{}) interface{} {
-	return argWrapper{v}
-}
-
-type argWrapper struct {
-	value interface{}
-}
-
-type group struct {
-	q   []interface{}
-	sep string
-}
-
-func (b *group) getSep() string {
-	if b.sep == "" {
-		return ", "
+func convertToString(x interface{}) string {
+	switch x := x.(type) {
+	default:
+		return fmt.Sprint(x)
+	case string:
+		return x
+	case int:
+		return strconv.Itoa(x)
+	case int32:
+		return strconv.FormatInt(int64(x), 10)
+	case int64:
+		return strconv.FormatInt(x, 10)
+	case bool:
+		return strconv.FormatBool(x)
+	case notArg:
+		return convertToString(x.value)
 	}
-	return b.sep
-}
-
-func (b *group) empty() bool {
-	return len(b.q) == 0
-}
-
-func (b *group) push(q ...interface{}) {
-	b.q = append(b.q, q...)
-}
-
-func (b *group) pushString(q ...string) {
-	for _, x := range q {
-		b.q = append(b.q, x)
-	}
-}
-
-type parenGroup struct {
-	group
 }
