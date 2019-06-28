@@ -20,6 +20,9 @@ type Where interface {
 	LikeRaw(field string, rawValue interface{})
 	ILike(field string, value interface{})
 	ILikeRaw(field string, rawValue interface{})
+	IsNull(field string)
+	IsNotNull(field string)
+	Raw(sql string)
 	And(f func(b Where))
 	Or(f func(b Where))
 }
@@ -103,6 +106,18 @@ func (st *where) ILike(field string, value interface{}) {
 
 func (st *where) ILikeRaw(field string, rawValue interface{}) {
 	st.ILike(field, NotArg(rawValue))
+}
+
+func (st *where) IsNull(field string) {
+	st.ops.push(field + " is null")
+}
+
+func (st *where) IsNotNull(field string) {
+	st.ops.push(field + " is not null")
+}
+
+func (st *where) Raw(sql string) {
+	st.ops.push(sql)
 }
 
 func (st *where) And(f func(b Where)) {
