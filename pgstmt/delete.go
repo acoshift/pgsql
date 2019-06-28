@@ -5,7 +5,7 @@ func Delete(f func(b DeleteStatement)) *Result {
 	var st deleteStmt
 	f(&st)
 
-	var b builder
+	var b buffer
 	b.push("delete")
 	b.push("from", st.from)
 	if !st.where.empty() {
@@ -17,7 +17,7 @@ func Delete(f func(b DeleteStatement)) *Result {
 		b.push(&st.returning)
 	}
 
-	return newResult(b.build())
+	return newResult(build(&b))
 }
 
 type DeleteStatement interface {

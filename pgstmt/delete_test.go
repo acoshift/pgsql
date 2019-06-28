@@ -17,15 +17,15 @@ func TestDelete(t *testing.T) {
 			b.Eq("username", "test")
 			b.Eq("is_active", false)
 			b.Or(func(b pgstmt.Where) {
-				b.Gt("age", 20)
-				b.Le("age", 30)
+				b.Gt("age", pgstmt.Arg(20))
+				b.Le("age", pgstmt.Arg(30))
 			})
 		})
 		b.Returning("id", "name")
 	}).SQL()
 
 	assert.Equal(t,
-		"delete from users where ((username = $1) and (is_active = $2)) or ((age > $3) and (age <= $4)) returning id, name",
+		"delete from users where (username = $1 and is_active = $2) or (age > $3 and age <= $4) returning id, name",
 		q,
 	)
 	assert.EqualValues(t,

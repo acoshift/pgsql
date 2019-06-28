@@ -5,7 +5,7 @@ func Insert(f func(b InsertStatement)) *Result {
 	var st insertStmt
 	f(&st)
 
-	var b builder
+	var b buffer
 	b.push("insert")
 	if st.table != "" {
 		b.push("into", st.table)
@@ -41,7 +41,7 @@ func Insert(f func(b InsertStatement)) *Result {
 		b.push(&st.returning)
 	}
 
-	return newResult(b.build())
+	return newResult(build(&b))
 }
 
 // InsertStatement is the insert statement builder
@@ -95,7 +95,7 @@ func (st *insertStmt) DefaultValues() {
 func (st *insertStmt) Value(value ...interface{}) {
 	var x parenGroup
 	for _, v := range value {
-		x.push(arg(v))
+		x.push(Arg(v))
 	}
 	st.values.push(&x)
 }
