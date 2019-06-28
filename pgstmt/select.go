@@ -59,9 +59,7 @@ func (st *selectStmt) ColumnSelect(f func(b SelectStatement), as string) {
 	f(&x)
 
 	var b buffer
-	var p parenGroup
-	p.push(x.make())
-	b.push(&p)
+	b.push(paren(x.make()))
 	if as != "" {
 		b.push(as)
 	}
@@ -77,9 +75,7 @@ func (st *selectStmt) FromSelect(f func(b SelectStatement), as string) {
 	f(&x)
 
 	var b buffer
-	var p parenGroup
-	p.push(x.make())
-	b.push(&p)
+	b.push(paren(x.make()))
 	if as != "" {
 		b.push(as)
 	}
@@ -161,9 +157,7 @@ func (st *selectStmt) make() *buffer {
 		b.push("where", &st.where)
 	}
 	if !st.groupBy.empty() {
-		var p parenGroup
-		p.push(&st.groupBy)
-		b.push("group by", &p)
+		b.push("group by", paren(&st.groupBy))
 	}
 	if !st.having.empty() {
 		b.push("having", &st.having)
@@ -193,9 +187,7 @@ func (st *join) On(f func(b Cond)) {
 }
 
 func (st *join) Using(col ...string) {
-	var p parenGroup
-	p.pushString(col...)
-	st.using.push(&p)
+	st.using.push(parenString(col...))
 }
 
 func (st *join) build() []interface{} {

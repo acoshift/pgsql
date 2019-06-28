@@ -29,3 +29,15 @@ func (b *group) pushString(q ...string) {
 type parenGroup struct {
 	group
 }
+
+func paren(q ...interface{}) interface{} {
+	var p parenGroup
+	p.push(q...)
+	return &p
+}
+
+func parenString(q ...string) interface{} {
+	var p parenGroup
+	p.pushString(q...)
+	return &p
+}

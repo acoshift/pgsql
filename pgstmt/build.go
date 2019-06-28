@@ -47,6 +47,10 @@ func build(b *buffer) (string, []interface{}) {
 				i++
 				q = append(q, "$"+strconv.Itoa(i))
 				args = append(args, x.value)
+			case any:
+				i++
+				q = append(q, fmt.Sprintf("any($%d)", i))
+				args = append(args, x.value)
 			case *group:
 				if !x.empty() {
 					q = append(q, f(x.q, x.getSep()))

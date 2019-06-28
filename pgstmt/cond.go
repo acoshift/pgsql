@@ -20,6 +20,10 @@ type Cond interface {
 	LikeRaw(field string, rawValue interface{})
 	ILike(field string, value interface{})
 	ILikeRaw(field string, rawValue interface{})
+	In(field string, value ...interface{})
+	InRaw(field string, value ...interface{})
+	NotIn(field string, value ...interface{})
+	NotInRaw(field string, value ...interface{})
 	IsNull(field string)
 	IsNotNull(field string)
 	Raw(sql string)
@@ -41,7 +45,10 @@ func (st *cond) Op(field, op string, value interface{}) {
 }
 
 func (st *cond) OpRaw(field, op string, rawValue interface{}) {
-	st.Op(field, op, NotArg(rawValue))
+	var x group
+	x.sep = " "
+	x.push(field, op, rawValue)
+	st.ops.push(&x)
 }
 
 func (st *cond) Eq(field string, value interface{}) {
@@ -49,7 +56,7 @@ func (st *cond) Eq(field string, value interface{}) {
 }
 
 func (st *cond) EqRaw(field string, rawValue interface{}) {
-	st.Eq(field, NotArg(rawValue))
+	st.OpRaw(field, "=", rawValue)
 }
 
 func (st *cond) Ne(field string, value interface{}) {
@@ -57,7 +64,7 @@ func (st *cond) Ne(field string, value interface{}) {
 }
 
 func (st *cond) NeRaw(field string, rawValue interface{}) {
-	st.Ne(field, NotArg(rawValue))
+	st.OpRaw(field, "!=", rawValue)
 }
 
 func (st *cond) Lt(field string, value interface{}) {
@@ -65,7 +72,7 @@ func (st *cond) Lt(field string, value interface{}) {
 }
 
 func (st *cond) LtRaw(field string, rawValue interface{}) {
-	st.Lt(field, NotArg(rawValue))
+	st.OpRaw(field, "<", rawValue)
 }
 
 func (st *cond) Le(field string, value interface{}) {
@@ -73,7 +80,7 @@ func (st *cond) Le(field string, value interface{}) {
 }
 
 func (st *cond) LeRaw(field string, rawValue interface{}) {
-	st.Le(field, NotArg(rawValue))
+	st.OpRaw(field, "<=", rawValue)
 }
 
 func (st *cond) Gt(field string, value interface{}) {
@@ -81,7 +88,7 @@ func (st *cond) Gt(field string, value interface{}) {
 }
 
 func (st *cond) GtRaw(field string, rawValue interface{}) {
-	st.Gt(field, NotArg(rawValue))
+	st.OpRaw(field, ">", rawValue)
 }
 
 func (st *cond) Ge(field string, value interface{}) {
@@ -89,7 +96,7 @@ func (st *cond) Ge(field string, value interface{}) {
 }
 
 func (st *cond) GeRaw(field string, rawValue interface{}) {
-	st.Ge(field, NotArg(rawValue))
+	st.OpRaw(field, ">=", rawValue)
 }
 
 func (st *cond) Like(field string, value interface{}) {
@@ -97,7 +104,7 @@ func (st *cond) Like(field string, value interface{}) {
 }
 
 func (st *cond) LikeRaw(field string, rawValue interface{}) {
-	st.Like(field, NotArg(rawValue))
+	st.OpRaw(field, "like", rawValue)
 }
 
 func (st *cond) ILike(field string, value interface{}) {
@@ -105,7 +112,51 @@ func (st *cond) ILike(field string, value interface{}) {
 }
 
 func (st *cond) ILikeRaw(field string, rawValue interface{}) {
-	st.ILike(field, NotArg(rawValue))
+	st.OpRaw(field, "ilike", rawValue)
+}
+
+func (st *cond) In(field string, value ...interface{}) {
+	var p group
+	for _, v := range value {
+		p.push(Arg(v))
+	}
+
+	var x group
+	x.sep = " "
+	x.push(field, "in", paren(&p))
+	st.ops.push(&x)
+}
+
+func (st *cond) InRaw(field string, value ...interface{}) {
+	var p group
+	p.push(value...)
+
+	var x group
+	x.sep = " "
+	x.push(field, "in", paren(&p))
+	st.ops.push(&x)
+}
+
+func (st *cond) NotIn(field string, value ...interface{}) {
+	var p group
+	for _, v := range value {
+		p.push(Arg(v))
+	}
+
+	var x group
+	x.sep = " "
+	x.push(field, "not in", paren(&p))
+	st.ops.push(&x)
+}
+
+func (st *cond) NotInRaw(field string, value ...interface{}) {
+	var p group
+	p.push(value...)
+
+	var x group
+	x.sep = " "
+	x.push(field, "not in", paren(&p))
+	st.ops.push(&x)
 }
 
 func (st *cond) IsNull(field string) {

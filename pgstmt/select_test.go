@@ -3,6 +3,7 @@ package pgstmt_test
 import (
 	"testing"
 
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/acoshift/pgsql/pgstmt"
@@ -225,5 +226,70 @@ func TestSelect(t *testing.T) {
 			q,
 		)
 		assert.Empty(t, args)
+	})
+
+	t.Run("select any", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("*")
+			b.From("table")
+			b.Where(func(b pgstmt.Cond) {
+				b.Eq("x", pgstmt.Any(pq.Array([]int64{1, 2})))
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select * from table where (x = any($1))",
+			q,
+		)
+		assert.EqualValues(t,
+			[]interface{}{
+				pq.Array([]int64{1, 2}),
+			},
+			args,
+		)
+	})
+
+	t.Run("select in", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("*")
+			b.From("table")
+			b.Where(func(b pgstmt.Cond) {
+				b.In("x", 1, 2)
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select * from table where (x in ($1, $2))",
+			q,
+		)
+		assert.EqualValues(t,
+			[]interface{}{
+				1,
+				2,
+			},
+			args,
+		)
+	})
+
+	t.Run("select not in", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("*")
+			b.From("table")
+			b.Where(func(b pgstmt.Cond) {
+				b.NotIn("x", 1, 2)
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select * from table where (x not in ($1, $2))",
+			q,
+		)
+		assert.EqualValues(t,
+			[]interface{}{
+				1,
+				2,
+			},
+			args,
+		)
 	})
 }

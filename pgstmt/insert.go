@@ -28,9 +28,7 @@ func Insert(f func(b InsertStatement)) *Result {
 	if st.conflict != nil {
 		b.push("on conflict")
 		if len(st.conflict.targets) > 0 {
-			var p parenGroup
-			p.pushString(st.conflict.targets...)
-			b.push(&p)
+			b.push(parenString(st.conflict.targets...))
 		}
 		if st.conflict.doNothing {
 			b.push("do nothing")
