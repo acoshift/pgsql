@@ -51,7 +51,7 @@ func TestSelect(t *testing.T) {
 					b.Where(func(b pgstmt.Where) {
 						b.EqRaw("m.id", "p.id")
 					})
-					b.OrderBy("created_at", "desc").NullsFirst()
+					b.OrderBy("created_at").Desc().NullsFirst()
 					b.Limit(1)
 					b.Offset(2)
 				}, "msg")
@@ -126,8 +126,8 @@ func TestSelect(t *testing.T) {
 			b.Where(func(b pgstmt.Where) {
 				b.Eq("id", 1)
 			})
-			b.OrderBy("created_at", "asc").NullsLast()
-			b.OrderBy("id", "desc")
+			b.OrderBy("created_at").Asc().NullsLast()
+			b.OrderBy("id").Desc()
 		}).SQL()
 
 		assert.Equal(t,
@@ -149,13 +149,13 @@ func TestSelect(t *testing.T) {
 			b.Where(func(b pgstmt.Where) {
 				b.Eq("id", 1)
 			})
-			b.OrderBy("id", "desc")
+			b.OrderBy("id")
 			b.Limit(5)
 			b.Offset(10)
 		}).SQL()
 
 		assert.Equal(t,
-			"select id, name from users where (id = $1) order by id desc limit 5 offset 10",
+			"select id, name from users where (id = $1) order by id limit 5 offset 10",
 			q,
 		)
 		assert.EqualValues(t,

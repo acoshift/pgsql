@@ -24,7 +24,7 @@ type SelectStatement interface {
 	RightJoin(table string)
 	RightJoinOn(table string, on func(b Where))
 	Where(f func(b Where))
-	OrderBy(col string, direction string) OrderBy
+	OrderBy(col string) OrderBy
 	Limit(n int64)
 	Offset(n int64)
 }
@@ -129,10 +129,9 @@ func (st *selectStmt) Where(f func(b Where)) {
 	f(&st.where)
 }
 
-func (st *selectStmt) OrderBy(col string, op string) OrderBy {
+func (st *selectStmt) OrderBy(col string) OrderBy {
 	p := orderBy{
 		col: col,
-		op:  op,
 	}
 	st.order.push(&p)
 	return &p
@@ -147,29 +146,43 @@ func (st *selectStmt) Offset(n int64) {
 }
 
 type OrderBy interface {
-	NullsFirst()
-	NullsLast()
+	Asc() OrderBy
+	Desc() OrderBy
+	NullsFirst() OrderBy
+	NullsLast() OrderBy
 }
 
 type orderBy struct {
-	col   string
-	op    string
-	nulls string
+	col       string
+	direction string
+	nulls     string
 }
 
-func (st *orderBy) NullsFirst() {
+func (st *orderBy) Asc() OrderBy {
+	st.direction = "asc"
+	return st
+}
+
+func (st *orderBy) Desc() OrderBy {
+	st.direction = "desc"
+	return st
+}
+
+func (st *orderBy) NullsFirst() OrderBy {
 	st.nulls = "first"
+	return st
 }
 
-func (st *orderBy) NullsLast() {
+func (st *orderBy) NullsLast() OrderBy {
 	st.nulls = "last"
+	return st
 }
 
 func (st *orderBy) build() []interface{} {
 	var b buffer
 	b.push(st.col)
-	if st.op != "" {
-		b.push(st.op)
+	if st.direction != "" {
+		b.push(st.direction)
 	}
 	if st.nulls != "" {
 		b.push("nulls", st.nulls)
