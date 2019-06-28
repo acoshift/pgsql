@@ -56,7 +56,7 @@ func TestSelect(t *testing.T) {
 					b.Offset(2)
 				}, "msg")
 				b.From("profile p")
-				b.LeftJoinOn("noti n", func(b pgstmt.Where) {
+				b.LeftJoin("noti n").On(func(b pgstmt.Where) {
 					b.EqRaw("n.id", "p.id")
 					b.Eq("n.user_id", 1)
 				})
@@ -184,13 +184,27 @@ func TestSelect(t *testing.T) {
 		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("id", "name")
 			b.From("users")
-			b.LeftJoinOn("roles", func(b pgstmt.Where) {
+			b.LeftJoin("roles").On(func(b pgstmt.Where) {
 				b.EqRaw("users.id", "roles.id")
 			})
 		}).SQL()
 
 		assert.Equal(t,
 			"select id, name from users left join roles on (users.id = roles.id)",
+			q,
+		)
+		assert.Empty(t, args)
+	})
+
+	t.Run("join using", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("id", "name")
+			b.From("users")
+			b.InnerJoin("roles").Using("id", "name")
+		}).SQL()
+
+		assert.Equal(t,
+			"select id, name from users inner join roles using (id, name)",
 			q,
 		)
 		assert.Empty(t, args)
