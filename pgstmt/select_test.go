@@ -311,4 +311,81 @@ func TestSelect(t *testing.T) {
 			args,
 		)
 	})
+
+	t.Run("select and mode", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("*")
+			b.From("table")
+			b.Where(func(b pgstmt.Cond) {
+				b.Mode().And()
+				b.EqRaw("a", 1)
+				b.EqRaw("a", 2)
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select * from table where (a = 1 and a = 2)",
+			q,
+		)
+		assert.Empty(t, args)
+	})
+
+	t.Run("select or mode", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("*")
+			b.From("table")
+			b.Where(func(b pgstmt.Cond) {
+				b.Mode().Or()
+				b.EqRaw("a", 1)
+				b.EqRaw("a", 2)
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select * from table where (a = 1 or a = 2)",
+			q,
+		)
+		assert.Empty(t, args)
+	})
+
+	t.Run("select nested or mode", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("*")
+			b.From("table")
+			b.Where(func(b pgstmt.Cond) {
+				b.EqRaw("a", 1)
+				b.And(func(b pgstmt.Cond) {
+					b.Mode().Or()
+					b.EqRaw("a", 2)
+					b.EqRaw("a", 3)
+				})
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select * from table where (a = 1) and (a = 2 or a = 3)",
+			q,
+		)
+		assert.Empty(t, args)
+	})
+
+	t.Run("select without op but nested", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("*")
+			b.From("table")
+			b.Where(func(b pgstmt.Cond) {
+				b.And(func(b pgstmt.Cond) {
+					b.Mode().Or()
+					b.EqRaw("a", 2)
+					b.EqRaw("a", 3)
+				})
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select * from table where (a = 2 or a = 3)",
+			q,
+		)
+		assert.Empty(t, args)
+	})
 }

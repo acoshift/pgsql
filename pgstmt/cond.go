@@ -30,6 +30,12 @@ type Cond interface {
 	Raw(sql string)
 	And(f func(b Cond))
 	Or(f func(b Cond))
+	Mode() CondMode
+}
+
+type CondMode interface {
+	And()
+	Or()
 }
 
 type cond struct {
@@ -206,13 +212,22 @@ func (st *cond) Or(f func(b Cond)) {
 	}
 }
 
+func (st *cond) Mode() CondMode {
+	return &condMode{st}
+}
+
 func (st *cond) empty() bool {
-	return st.ops.empty() /* && st.chain.empty() */
+	return st.ops.empty() && st.chain.empty()
 }
 
 func (st *cond) build() []interface{} {
-	if st.ops.empty() {
+	if st.empty() {
 		return nil
+	}
+
+	if st.ops.empty() {
+		st.chain.popFront()
+		return st.chain.q
 	}
 
 	if st.ops.sep == "" {
@@ -231,4 +246,16 @@ func (st *cond) build() []interface{} {
 	b.push(&st.ops)
 	b.push(st.chain.q...)
 	return b.q
+}
+
+type condMode struct {
+	cond *cond
+}
+
+func (mode *condMode) And() {
+	mode.cond.ops.sep = " and "
+}
+
+func (mode *condMode) Or() {
+	mode.cond.ops.sep = " or "
 }

@@ -14,8 +14,17 @@ func (b *buffer) push(q ...interface{}) {
 	b.q = append(b.q, q...)
 }
 
-func (b *buffer) pushFirst(q ...interface{}) {
+func (b *buffer) pushFront(q ...interface{}) {
 	b.q = append(q, b.q...)
+}
+
+func (b *buffer) popFront() interface{} {
+	if b.empty() {
+		return nil
+	}
+	p := b.q[0]
+	b.q = b.q[1:]
+	return p
 }
 
 func (b *buffer) empty() bool {
