@@ -26,6 +26,13 @@ func (b *group) pushString(q ...string) {
 	}
 }
 
+func withGroup(sep string, q ...interface{}) interface{} {
+	var g group
+	g.sep = sep
+	g.push(q...)
+	return &g
+}
+
 type parenGroup struct {
 	group
 	prefix string
@@ -40,5 +47,12 @@ func paren(q ...interface{}) interface{} {
 func parenString(q ...string) interface{} {
 	var p parenGroup
 	p.pushString(q...)
+	return &p
+}
+
+func withParen(sep string, q ...interface{}) interface{} {
+	var p parenGroup
+	p.sep = sep
+	p.push(q...)
 	return &p
 }

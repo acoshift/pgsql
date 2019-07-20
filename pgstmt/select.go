@@ -13,6 +13,7 @@ type SelectStatement interface {
 	ColumnSelect(f func(b SelectStatement), as string)
 	From(table ...string)
 	FromSelect(f func(b SelectStatement), as string)
+	FromValues(f func(b Values), as string)
 	Join(table string) Join
 	InnerJoin(table string) Join
 	FullOuterJoin(table string) Join
@@ -24,6 +25,11 @@ type SelectStatement interface {
 	OrderBy(col string) OrderBy
 	Limit(n int64)
 	Offset(n int64)
+}
+
+type Values interface {
+	Value(value ...interface{})
+	Values(values ...interface{})
 }
 
 type OrderBy interface {
@@ -80,6 +86,25 @@ func (st *selectStmt) FromSelect(f func(b SelectStatement), as string) {
 		b.push(as)
 	}
 	st.from.push(&b)
+}
+
+func (st *selectStmt) FromValues(f func(b Values), as string) {
+	var x values
+	f(&x)
+
+	if x.empty() {
+		return
+	}
+
+	st.from.push(withGroup(" ",
+		withGroup(" ",
+			withParen(" ",
+				"values",
+				withGroup(", ", x.q...),
+			),
+		),
+		as,
+	))
 }
 
 func (st *selectStmt) join(typ, table string) Join {
@@ -239,4 +264,22 @@ func (st *orderBy) build() []interface{} {
 		b.push("nulls", st.nulls)
 	}
 	return b.q
+}
+
+type values struct {
+	group
+}
+
+func (st *values) Value(value ...interface{}) {
+	var x parenGroup
+	for _, v := range value {
+		x.push(Arg(v))
+	}
+	st.push(&x)
+}
+
+func (st *values) Values(values ...interface{}) {
+	for _, value := range values {
+		st.Value(value)
+	}
 }
