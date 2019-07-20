@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/acoshift/pgsql"
 	"github.com/acoshift/pgsql/pgctx"
 	"github.com/acoshift/pgsql/pgstmt"
 )
@@ -32,11 +33,16 @@ func TestResult_QueryAllWith(t *testing.T) {
 			b.Value("3", "4")
 			b.Value("5", "6")
 		}, "t")
-	}).QueryAllWith(ctx, &vs, func(scan func(dest ...interface{}) error) (interface{}, error) {
+	}).IterWith(ctx, func(scan pgsql.Scanner) error {
 		var x v
 		err := scan(&x.a, &x.b)
-		return &x, err
+		if err != nil {
+			return err
+		}
+		vs = append(vs, &x)
+		return nil
 	})
+
 	assert.NoError(t, err)
 
 	assert.Len(t, vs, 3)

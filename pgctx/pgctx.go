@@ -111,3 +111,8 @@ func Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, e
 func Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	return q(ctx).ExecContext(ctx, query, args...)
 }
+
+// Iter calls pgsql.IterContext
+func Iter(ctx context.Context, iter pgsql.Iterator, query string, args ...interface{}) error {
+	return pgsql.IterContext(ctx, q(ctx), iter, query, args...)
+}
