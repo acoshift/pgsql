@@ -18,6 +18,7 @@ type Queryer interface {
 	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
 	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
 	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+	PrepareContext(context.Context, string) (*sql.Stmt, error)
 }
 
 // NewContext creates new context
@@ -115,4 +116,9 @@ func Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, e
 // Iter calls pgsql.IterContext
 func Iter(ctx context.Context, iter pgsql.Iterator, query string, args ...interface{}) error {
 	return pgsql.IterContext(ctx, q(ctx), iter, query, args...)
+}
+
+// Prepare calls db.PrepareContext
+func Prepare(ctx context.Context, query string) (*sql.Stmt, error) {
+	return q(ctx).PrepareContext(ctx, query)
 }
