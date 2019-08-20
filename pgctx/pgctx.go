@@ -69,15 +69,20 @@ func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
 	return nil
 }
 
+// IsInTx checks is context inside RunInTx
+func IsInTx(ctx context.Context) bool {
+	_, ok := ctx.Value(ctxKeyQueryer{}).(*sql.Tx)
+	return ok
+}
+
 // Committed calls f after committed or immediate if not in tx
 func Committed(ctx context.Context, f func(ctx context.Context)) {
-	// check is in tx ?
-	if _, ok := ctx.Value(ctxKeyQueryer{}).(*sql.Tx); !ok {
-		f(ctx)
+	if f == nil {
 		return
 	}
 
-	if f == nil {
+	if !IsInTx(ctx) {
+		f(ctx)
 		return
 	}
 
