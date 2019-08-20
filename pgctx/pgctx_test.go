@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/acoshift/pgsql"
 	"github.com/acoshift/pgsql/pgctx"
@@ -115,11 +115,11 @@ func TestCommitted(t *testing.T) {
 
 	t.Run("Outside Tx", func(t *testing.T) {
 		ctx, _ := newCtx(t)
-		assert.Panics(t, func() {
-			pgctx.Committed(ctx, func(ctx context.Context) {
-				assert.Fail(t, "should not be called")
-			})
+		var called bool
+		pgctx.Committed(ctx, func(ctx context.Context) {
+			called = true
 		})
+		assert.True(t, called)
 	})
 
 	t.Run("Nil func", func(t *testing.T) {

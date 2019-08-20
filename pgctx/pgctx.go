@@ -69,11 +69,12 @@ func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
 	return nil
 }
 
-// Committed calls f after committed
+// Committed calls f after committed or immediate if not in tx
 func Committed(ctx context.Context, f func(ctx context.Context)) {
 	// check is in tx ?
 	if _, ok := ctx.Value(ctxKeyQueryer{}).(*sql.Tx); !ok {
-		panic("pgsql: not in tx")
+		f(ctx)
+		return
 	}
 
 	if f == nil {
