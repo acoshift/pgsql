@@ -75,11 +75,11 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 
 	for i := 0; i < option.MaxAttempts; i++ {
 		err := f()
-		if err == nil || err == ErrAbortTx {
+		if err == nil || errors.Is(err, ErrAbortTx) {
 			return nil
 		}
-		pqErr, ok := err.(*pq.Error)
-		if retryable := ok && (pqErr.Code == "40001"); !retryable {
+		var pqErr *pq.Error
+		if retryable := errors.As(err, &pqErr) && (pqErr.Code == "40001"); !retryable {
 			return err
 		}
 	}

@@ -3,6 +3,7 @@ package pgctx
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/acoshift/pgsql"
@@ -53,7 +54,7 @@ func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
 		ctx := context.WithValue(ctx, ctxKeyQueryer{}, tx)
 		ctx = context.WithValue(ctx, ctxKeyCommitted{}, cm)
 		err := f(ctx)
-		if err == pgsql.ErrAbortTx {
+		if errors.Is(err, pgsql.ErrAbortTx) {
 			abort = true
 		}
 		return err

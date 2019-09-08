@@ -1,6 +1,7 @@
 package pgsql
 
 import (
+	"errors"
 	"regexp"
 
 	"github.com/lib/pq"
@@ -18,7 +19,8 @@ func contains(xs []string, x string) bool {
 // IsUniqueViolation checks is error an unique_violation with given constraint,
 // constraint can be empty to ignore constraint name checks
 func IsUniqueViolation(err error, constraint ...string) bool {
-	if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 		if len(constraint) == 0 {
 			return true
 		}
@@ -29,7 +31,8 @@ func IsUniqueViolation(err error, constraint ...string) bool {
 
 // IsInvalidTextRepresentation checks is error an invalid_text_representation
 func IsInvalidTextRepresentation(err error) bool {
-	if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "22P02" {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && pqErr.Code == "22P02" {
 		return true
 	}
 	return false
@@ -37,7 +40,8 @@ func IsInvalidTextRepresentation(err error) bool {
 
 // IsForeignKeyViolation checks is error an foreign_key_violation
 func IsForeignKeyViolation(err error, constraint ...string) bool {
-	if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23503" {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && pqErr.Code == "23503" {
 		if len(constraint) == 0 {
 			return true
 		}
