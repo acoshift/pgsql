@@ -46,6 +46,22 @@ func IsForeignKeyViolation(err error, constraint ...string) bool {
 	return false
 }
 
+func extractConstraint(err *pq.Error) string {
+	if err.Constraint != "" {
+		return err.Constraint
+	}
+	if err.Message == "" {
+		return ""
+	}
+	if s := extractCRDBKey(err.Message); s != "" {
+		return s
+	}
+	if s := extractLastQuote(err.Message); s != "" {
+		return s
+	}
+	return ""
+}
+
 var reLastQuoteExtractor = regexp.MustCompile(`"([^"]*)"[^"]*$`)
 
 // extractLastQuote extracts last string in quote
@@ -59,12 +75,16 @@ func extractLastQuote(s string) string {
 	return rs[1]
 }
 
-func extractConstraint(err *pq.Error) string {
-	if err.Constraint != "" {
-		return err.Constraint
+var reCRDBKeyExtractor = regexp.MustCompile(`(\w+@\w+)[^@]*$`)
+
+// extractCRDBKey extracts key from crdb
+// until (https://github.com/cockroachdb/cockroach/issues/36494) resolved
+// ex. `foreign key violation: value ['b'] not found in a@primary [id] (txn=e3f9af56-5f73-4899-975c-4bb1de800402)`
+// will return `a@primary`
+func extractCRDBKey(s string) string {
+	rs := reCRDBKeyExtractor.FindStringSubmatch(s)
+	if len(rs) < 2 {
+		return ""
 	}
-	if err.Message != "" {
-		return extractLastQuote(err.Message)
-	}
-	return ""
+	return rs[1]
 }
