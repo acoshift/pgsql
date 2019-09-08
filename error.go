@@ -1,6 +1,8 @@
 package pgsql
 
 import (
+	"regexp"
+
 	"github.com/lib/pq"
 )
 
@@ -20,7 +22,7 @@ func IsUniqueViolation(err error, constraint ...string) bool {
 		if len(constraint) == 0 {
 			return true
 		}
-		return contains(constraint, pqErr.Constraint)
+		return contains(constraint, extractConstraint(pqErr))
 	}
 	return false
 }
@@ -39,7 +41,30 @@ func IsForeignKeyViolation(err error, constraint ...string) bool {
 		if len(constraint) == 0 {
 			return true
 		}
-		return contains(constraint, pqErr.Constraint)
+		return contains(constraint, extractConstraint(pqErr))
 	}
 	return false
+}
+
+var reLastQuoteExtractor = regexp.MustCompile(`"([^"]*)"[^"]*$`)
+
+// extractLastQuote extracts last string in quote
+// ex. `insert or update on table "b" violates foreign key constraint "a_id_fkey"`
+// will return `a_id_fkey`
+func extractLastQuote(s string) string {
+	rs := reLastQuoteExtractor.FindStringSubmatch(s)
+	if len(rs) < 2 {
+		return ""
+	}
+	return rs[1]
+}
+
+func extractConstraint(err *pq.Error) string {
+	if err.Constraint != "" {
+		return err.Constraint
+	}
+	if err.Message != "" {
+		return extractLastQuote(err.Message)
+	}
+	return ""
 }
