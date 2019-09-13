@@ -14,7 +14,7 @@ func Do(ctx context.Context, model interface{}, filter ...Filter) error {
 		return m.Scan(pgstmt.Select(func(b pgstmt.SelectStatement) {
 			m.Select(b)
 			for _, f := range filter {
-				f.apply(b)
+				f.Apply(ctx, b)
 			}
 		}).QueryRowWith(ctx).Scan)
 	}
@@ -30,7 +30,7 @@ func Do(ctx context.Context, model interface{}, filter ...Filter) error {
 		err := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			m.Select(b)
 			for _, f := range filter {
-				f.apply(b)
+				f.Apply(ctx, b)
 			}
 		}).IterWith(ctx, func(scan pgsql.Scanner) error {
 			rx := reflect.New(typeElem)

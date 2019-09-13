@@ -1,16 +1,18 @@
 package pgmodel
 
 import (
+	"context"
+
 	"github.com/acoshift/pgsql/pgstmt"
 )
 
 type Filter interface {
-	apply(b pgstmt.SelectStatement)
+	Apply(ctx context.Context, b pgstmt.SelectStatement)
 }
 
 type filterFunc func(b pgstmt.SelectStatement)
 
-func (f filterFunc) apply(b pgstmt.SelectStatement) { f(b) }
+func (f filterFunc) Apply(_ context.Context, b pgstmt.SelectStatement) { f(b) }
 
 func Equal(field string, value interface{}) Filter {
 	return Where(func(b pgstmt.Cond) {
