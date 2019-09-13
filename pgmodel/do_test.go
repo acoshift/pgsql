@@ -38,7 +38,7 @@ func TestDo_SelectModel(t *testing.T) {
 
 	{
 		var m selectModel
-		err = pgmodel.Do(ctx, &m, pgmodel.One("id", 2))
+		err = pgmodel.Do(ctx, &m, pgmodel.Equal("id", 2))
 		assert.NoError(t, err)
 		assert.Equal(t, int64(2), m.ID)
 		assert.Equal(t, "value 2", m.Value)
@@ -47,7 +47,7 @@ func TestDo_SelectModel(t *testing.T) {
 
 	{
 		var m selectModel
-		err = pgmodel.Do(ctx, &m, pgmodel.One("id", 99))
+		err = pgmodel.Do(ctx, &m, pgmodel.Equal("id", 99))
 		assert.Equal(t, sql.ErrNoRows, err)
 		assert.Empty(t, m)
 	}

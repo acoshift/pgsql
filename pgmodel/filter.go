@@ -12,9 +12,9 @@ type filterFunc func(b pgstmt.SelectStatement)
 
 func (f filterFunc) apply(b pgstmt.SelectStatement) { f(b) }
 
-func One(field string, eqValue interface{}) Filter {
+func Equal(field string, value interface{}) Filter {
 	return Where(func(b pgstmt.Cond) {
-		b.Eq(field, eqValue)
+		b.Eq(field, value)
 	})
 }
 
