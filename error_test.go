@@ -1,7 +1,9 @@
 package pgsql_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
@@ -79,4 +81,17 @@ func TestIsForeignKeyViolation(t *testing.T) {
 		Table:      "b",
 		Constraint: "",
 	}, "pkey", "b_a_id_fkey", "a@primary"))
+}
+
+func TestIsQueryCanceled(t *testing.T) {
+	t.Parallel()
+
+	db := open(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	time.AfterFunc(100*time.Millisecond, cancel)
+	_, err := db.ExecContext(ctx, "select pg_sleep(1)")
+	assert.True(t, pgsql.IsQueryCanceled(err))
 }
