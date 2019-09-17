@@ -5,15 +5,23 @@ import (
 	"github.com/acoshift/pgsql/pgstmt"
 )
 
-// Selector model
-type Selector interface {
-	Select(b pgstmt.SelectStatement)
+// Scanner model
+type Scanner interface {
 	Scan(scan pgsql.Scanner) error
 }
 
-// // Inserter model
-// type Inserter interface {
-// 	Table() string
-// 	Columns() []string
-// 	Value(value ...interface{})
-// }
+// Selector model
+type Selector interface {
+	Select(b pgstmt.SelectStatement)
+	Scanner
+}
+
+// Inserter model
+type Inserter interface {
+	Insert(b pgstmt.InsertStatement)
+}
+
+// Updater model
+type Updater interface {
+	Update(b pgstmt.UpdateStatement)
+}
