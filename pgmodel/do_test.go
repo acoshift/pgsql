@@ -61,6 +61,14 @@ func TestDo_SelectModel(t *testing.T) {
 			assert.Equal(t, int64(1), ms[1].ID)
 		}
 	}
+
+	{
+		var m selectModel
+		err = pgmodel.Do(ctx, &m, filterError{})
+		assert.Error(t, err)
+		_, ok := err.(filterError)
+		assert.True(t, ok)
+	}
 }
 
 type selectModel struct {
@@ -208,3 +216,14 @@ func (m *insertModel) Insert(b pgstmt.InsertStatement) {
 	b.Columns("id", "value")
 	b.Value(m.ID, m.Value)
 }
+
+type filterError struct{}
+
+func (err filterError) Apply(ctx context.Context, b pgmodel.Cond) error {
+	return err
+}
+
+func (err filterError) Error() string {
+	return "error"
+}
+

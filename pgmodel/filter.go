@@ -15,12 +15,12 @@ type Cond interface {
 }
 
 type Filter interface {
-	Apply(ctx context.Context, b Cond)
+	Apply(ctx context.Context, b Cond) error
 }
 
-type FilterFunc func(ctx context.Context, b Cond)
+type FilterFunc func(ctx context.Context, b Cond) error
 
-func (f FilterFunc) Apply(ctx context.Context, b Cond) { f(ctx, b) }
+func (f FilterFunc) Apply(ctx context.Context, b Cond) error { return f(ctx, b) }
 
 func Equal(field string, value interface{}) Filter {
 	return Where(func(b pgstmt.Cond) {
@@ -29,32 +29,37 @@ func Equal(field string, value interface{}) Filter {
 }
 
 func Where(f func(b pgstmt.Cond)) Filter {
-	return FilterFunc(func(_ context.Context, b Cond) {
+	return FilterFunc(func(_ context.Context, b Cond) error {
 		b.Where(f)
+		return nil
 	})
 }
 
 func Having(f func(b pgstmt.Cond)) Filter {
-	return FilterFunc(func(_ context.Context, b Cond) {
+	return FilterFunc(func(_ context.Context, b Cond) error {
 		b.Having(f)
+		return nil
 	})
 }
 
 func OrderBy(col string) Filter {
-	return FilterFunc(func(_ context.Context, b Cond) {
+	return FilterFunc(func(_ context.Context, b Cond) error {
 		b.OrderBy(col)
+		return nil
 	})
 }
 
 func Limit(n int64) Filter {
-	return FilterFunc(func(_ context.Context, b Cond) {
+	return FilterFunc(func(_ context.Context, b Cond) error {
 		b.Limit(n)
+		return nil
 	})
 }
 
 func Offset(n int64) Filter {
-	return FilterFunc(func(_ context.Context, b Cond) {
+	return FilterFunc(func(_ context.Context, b Cond) error {
 		b.Offset(n)
+		return nil
 	})
 }
 

@@ -10,14 +10,22 @@ import (
 )
 
 func Do(ctx context.Context, model interface{}, filter ...Filter) error {
+	var err error
 	switch m := model.(type) {
 	case Selector:
-		return m.Scan(pgstmt.Select(func(b pgstmt.SelectStatement) {
+		stmt := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			m.Select(b)
 			for _, f := range filter {
-				f.Apply(ctx, b)
+				err = f.Apply(ctx, b)
+				if err != nil {
+					return
+				}
 			}
-		}).QueryRowWith(ctx).Scan)
+		})
+		if err != nil {
+			return err
+		}
+		return m.Scan(stmt.QueryRowWith(ctx).Scan)
 	case Inserter:
 		stmt := pgstmt.Insert(func(b pgstmt.InsertStatement) {
 			m.Insert(b)
@@ -32,9 +40,15 @@ func Do(ctx context.Context, model interface{}, filter ...Filter) error {
 		stmt := pgstmt.Update(func(b pgstmt.UpdateStatement) {
 			m.Update(b)
 			for _, f := range filter {
-				f.Apply(ctx, condUpdateWrapper{b})
+				err = f.Apply(ctx, condUpdateWrapper{b})
+				if err != nil {
+					return
+				}
 			}
 		})
+		if err != nil {
+			return err
+		}
 
 		if scanner, ok := m.(Scanner); ok {
 			return scanner.Scan(stmt.QueryRowWith(ctx).Scan)
@@ -51,12 +65,20 @@ func Do(ctx context.Context, model interface{}, filter ...Filter) error {
 	m := reflect.New(typeElem).Interface()
 
 	if m, ok := m.(Selector); ok {
-		err := pgstmt.Select(func(b pgstmt.SelectStatement) {
+		stmt := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			m.Select(b)
 			for _, f := range filter {
-				f.Apply(ctx, b)
+				err = f.Apply(ctx, b)
+				if err != nil {
+					return
+				}
 			}
-		}).IterWith(ctx, func(scan pgsql.Scanner) error {
+		})
+		if err != nil {
+			return err
+		}
+
+		err = stmt.IterWith(ctx, func(scan pgsql.Scanner) error {
 			rx := reflect.New(typeElem)
 			err := rx.Interface().(Selector).Scan(scan)
 			if err != nil {
