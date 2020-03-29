@@ -16,6 +16,24 @@ func contains(xs []string, x string) bool {
 	return false
 }
 
+// IsErrorCode checks is error has given code
+func IsErrorCode(err error, code string) bool {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && string(pqErr.Code) == code {
+		return true
+	}
+	return false
+}
+
+// IsErrorClass checks is error has given class
+func IsErrorClass(err error, class string) bool {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && string(pqErr.Code.Class()) == class {
+		return true
+	}
+	return false
+}
+
 // IsUniqueViolation checks is error an unique_violation with given constraint,
 // constraint can be empty to ignore constraint name checks
 func IsUniqueViolation(err error, constraint ...string) bool {
@@ -31,11 +49,12 @@ func IsUniqueViolation(err error, constraint ...string) bool {
 
 // IsInvalidTextRepresentation checks is error an invalid_text_representation
 func IsInvalidTextRepresentation(err error) bool {
-	var pqErr *pq.Error
-	if errors.As(err, &pqErr) && pqErr.Code == "22P02" {
-		return true
-	}
-	return false
+	return IsErrorCode(err, "22P02")
+}
+
+// IsCharacterNotInRepertoire checks is error an character_not_in_repertoire
+func IsCharacterNotInRepertoire(err error) bool {
+	return IsErrorCode(err, "22021")
 }
 
 // IsForeignKeyViolation checks is error an foreign_key_violation
