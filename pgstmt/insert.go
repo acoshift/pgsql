@@ -24,6 +24,12 @@ type InsertStatement interface {
 type OnConflict interface {
 	DoNothing()
 	DoUpdate(f func(b UpdateStatement))
+	OnConstraint(name string) OnConstraint
+}
+
+type OnConstraint interface {
+	DoNothing()
+	DoUpdate(f func(b UpdateStatement))
 }
 
 type insertStmt struct {
@@ -109,14 +115,25 @@ func (st *insertStmt) make() *buffer {
 	}
 	if st.conflict != nil {
 		b.push("on conflict")
-		if len(st.conflict.targets) > 0 {
-			b.push(parenString(st.conflict.targets...))
-		}
-		if st.conflict.doNothing {
-			b.push("do nothing")
-		}
-		if st.conflict.doUpdate != nil {
-			b.push("do", st.conflict.doUpdate.make())
+		if st.conflict.onConstraint != nil {
+			b.push("on constraint")
+			b.push(st.conflict.onConstraint.name)
+			if st.conflict.onConstraint.doNothing {
+				b.push("do nothing")
+			}
+			if st.conflict.onConstraint.doUpdate != nil {
+				b.push("do", st.conflict.onConstraint.doUpdate.make())
+			}
+		} else {
+			if len(st.conflict.targets) > 0 {
+				b.push(parenString(st.conflict.targets...))
+			}
+			if st.conflict.doNothing {
+				b.push("do nothing")
+			}
+			if st.conflict.doUpdate != nil {
+				b.push("do", st.conflict.doUpdate.make())
+			}
 		}
 	}
 	if !st.returning.empty() {
@@ -130,6 +147,7 @@ type conflict struct {
 	targets   []string
 	doNothing bool
 	doUpdate  *updateStmt
+	onConstraint *onConstraint
 }
 
 func (st *conflict) DoNothing() {
@@ -137,6 +155,27 @@ func (st *conflict) DoNothing() {
 }
 
 func (st *conflict) DoUpdate(f func(b UpdateStatement)) {
+	var x updateStmt
+	f(&x)
+	st.doUpdate = &x
+}
+
+func (st *conflict) OnConstraint(name string) OnConstraint {
+	st.onConstraint = &onConstraint{name: name}
+	return st.onConstraint
+}
+
+type onConstraint struct {
+	name string
+	doNothing bool
+	doUpdate  *updateStmt
+}
+
+func (st *onConstraint) DoNothing() {
+	st.doNothing = true
+}
+
+func (st *onConstraint) DoUpdate(f func(b UpdateStatement)) {
 	var x updateStmt
 	f(&x)
 	st.doUpdate = &x
