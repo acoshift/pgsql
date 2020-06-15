@@ -144,9 +144,9 @@ func (st *insertStmt) make() *buffer {
 }
 
 type conflict struct {
-	targets   []string
-	doNothing bool
-	doUpdate  *updateStmt
+	targets      []string
+	doNothing    bool
+	doUpdate     *updateStmt
 	onConstraint *onConstraint
 }
 
@@ -166,7 +166,7 @@ func (st *conflict) OnConstraint(name string) OnConstraint {
 }
 
 type onConstraint struct {
-	name string
+	name      string
 	doNothing bool
 	doUpdate  *updateStmt
 }
