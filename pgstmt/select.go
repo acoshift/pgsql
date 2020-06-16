@@ -63,7 +63,7 @@ type selectStmt struct {
 }
 
 func (st *selectStmt) Distinct() Distinct {
-	st.distinct = new(distinct)
+	st.distinct = &distinct{}
 	return st.distinct
 }
 
@@ -181,11 +181,9 @@ func (st *selectStmt) make() *buffer {
 	if st.distinct != nil {
 		b.push("distinct")
 
-		if st.distinct.on {
+		if !st.distinct.columns.empty() {
 			b.push("on")
-			if !st.distinct.columns.empty() {
-				b.push(&st.distinct.columns)
-			}
+			b.push(&st.distinct.columns)
 		}
 	}
 	if !st.columns.empty() {
@@ -306,11 +304,9 @@ func (st *values) Values(values ...interface{}) {
 }
 
 type distinct struct {
-	on      bool
 	columns parenGroup
 }
 
 func (st *distinct) On(col ...string) {
-	st.on = true
 	st.columns.pushString(col...)
 }
