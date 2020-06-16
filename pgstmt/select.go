@@ -9,6 +9,7 @@ func Select(f func(b SelectStatement)) *Result {
 
 // SelectStatement is the select statement builder
 type SelectStatement interface {
+	Distinct() Distinct
 	Columns(col ...string)
 	ColumnSelect(f func(b SelectStatement), as string)
 	From(table ...string)
@@ -25,6 +26,10 @@ type SelectStatement interface {
 	OrderBy(col string) OrderBy
 	Limit(n int64)
 	Offset(n int64)
+}
+
+type Distinct interface {
+	On(col ...string)
 }
 
 type Values interface {
@@ -45,15 +50,21 @@ type Join interface {
 }
 
 type selectStmt struct {
-	columns group
-	from    group
-	joins   buffer
-	where   cond
-	groupBy group
-	having  cond
-	orderBy group
-	limit   *int64
-	offset  *int64
+	distinct *distinct
+	columns  group
+	from     group
+	joins    buffer
+	where    cond
+	groupBy  group
+	having   cond
+	orderBy  group
+	limit    *int64
+	offset   *int64
+}
+
+func (st *selectStmt) Distinct() Distinct {
+	st.distinct = new(distinct)
+	return st.distinct
 }
 
 func (st *selectStmt) Columns(col ...string) {
@@ -167,6 +178,16 @@ func (st *selectStmt) Offset(n int64) {
 func (st *selectStmt) make() *buffer {
 	var b buffer
 	b.push("select")
+	if st.distinct != nil {
+		b.push("distinct")
+
+		if st.distinct.on {
+			b.push("on")
+			if !st.distinct.columns.empty() {
+				b.push(&st.distinct.columns)
+			}
+		}
+	}
 	if !st.columns.empty() {
 		b.push(&st.columns)
 	}
@@ -282,4 +303,14 @@ func (st *values) Values(values ...interface{}) {
 	for _, value := range values {
 		st.Value(value)
 	}
+}
+
+type distinct struct {
+	on      bool
+	columns parenGroup
+}
+
+func (st *distinct) On(col ...string) {
+	st.on = true
+	st.columns.pushString(col...)
 }

@@ -388,4 +388,30 @@ func TestSelect(t *testing.T) {
 		)
 		assert.Empty(t, args)
 	})
+
+	t.Run("select distinct", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Distinct()
+			b.Columns("col_1")
+		}).SQL()
+
+		assert.Equal(t,
+			"select distinct col_1",
+			q,
+		)
+		assert.Empty(t, args)
+	})
+
+	t.Run("select distinct on", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Distinct().On("col_1", "col_2")
+			b.Columns("col_1", "col_3")
+		}).SQL()
+
+		assert.Equal(t,
+			"select distinct on (col_1, col_2) col_1, col_3",
+			q,
+		)
+		assert.Empty(t, args)
+	})
 }
