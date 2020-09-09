@@ -53,9 +53,11 @@ func (st *updateStmt) From(table ...string) {
 }
 
 func (st *updateStmt) join(typ, table string) Join {
+	var b buffer
+	b.push(table)
 	x := join{
 		typ:   typ,
-		table: table,
+		table: &b,
 	}
 	st.joins.push(&x)
 	return &x

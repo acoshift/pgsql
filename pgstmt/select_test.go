@@ -211,6 +211,26 @@ func TestSelect(t *testing.T) {
 		assert.Empty(t, args)
 	})
 
+	t.Run("join select", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("id", "name", "count(*)")
+			b.From("users")
+			b.LeftJoinSelect(func(b pgstmt.SelectStatement) {
+				b.Columns("user_id", "data")
+				b.From("event")
+			}, "t").On(func(b pgstmt.Cond) {
+				b.EqRaw("t.user_id", "users.id")
+			})
+			b.GroupBy("id", "name")
+		}).SQL()
+
+		assert.Equal(t,
+			"select id, name, count(*) from users left join (select user_id, data from event) t on (t.user_id = users.id) group by (id, name)",
+			q,
+		)
+		assert.Empty(t, args)
+	})
+
 	t.Run("group by having", func(t *testing.T) {
 		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("city", "max(temp_lo)")

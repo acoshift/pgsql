@@ -20,6 +20,11 @@ type SelectStatement interface {
 	FullOuterJoin(table string) Join
 	LeftJoin(table string) Join
 	RightJoin(table string) Join
+	JoinSelect(f func(b SelectStatement), as string) Join
+	InnerJoinSelect(f func(b SelectStatement), as string) Join
+	FullOuterJoinSelect(f func(b SelectStatement), as string) Join
+	LeftJoinSelect(f func(b SelectStatement), as string) Join
+	RightJoinSelect(f func(b SelectStatement), as string) Join
 	Where(f func(b Cond))
 	GroupBy(col ...string)
 	Having(f func(b Cond))
@@ -119,9 +124,11 @@ func (st *selectStmt) FromValues(f func(b Values), as string) {
 }
 
 func (st *selectStmt) join(typ, table string) Join {
+	var b buffer
+	b.push(table)
 	x := join{
 		typ:   typ,
-		table: table,
+		table: &b,
 	}
 	st.joins.push(&x)
 	return &x
@@ -145,6 +152,44 @@ func (st *selectStmt) LeftJoin(table string) Join {
 
 func (st *selectStmt) RightJoin(table string) Join {
 	return st.join("right join", table)
+}
+
+func (st *selectStmt) joinSelect(typ string, f func(b SelectStatement), as string) Join {
+	var x selectStmt
+	f(&x)
+
+	var b buffer
+	b.push(paren(x.make()))
+	if as != "" {
+		b.push(as)
+	}
+
+	j := join{
+		typ:   typ,
+		table: &b,
+	}
+	st.joins.push(&j)
+	return &j
+}
+
+func (st *selectStmt) JoinSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("join", f, as)
+}
+
+func (st *selectStmt) InnerJoinSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("inner join", f, as)
+}
+
+func (st *selectStmt) FullOuterJoinSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("full outer join", f, as)
+}
+
+func (st *selectStmt) LeftJoinSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("left join", f, as)
+}
+
+func (st *selectStmt) RightJoinSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("right join", f, as)
 }
 
 func (st *selectStmt) Where(f func(b Cond)) {
@@ -221,7 +266,7 @@ func (st *selectStmt) make() *buffer {
 
 type join struct {
 	typ   string // join, inner join, full outer join, left join, right join
-	table string
+	table builder
 	using group
 	on    cond
 }
