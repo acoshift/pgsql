@@ -1,0 +1,31 @@
+name: Test
+on:
+  push:
+  pull_request:
+jobs:
+  runner-job:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+        - 5432:5432
+    strategy:
+      matrix:
+        go: ['1.15']
+    name: Go ${{ matrix.go }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+    - run: go get -t -v ./...
+    - run: go test -coverprofile=coverage.txt -covermode=atomic ./...
+    - uses: codecov/codecov-action@v1
