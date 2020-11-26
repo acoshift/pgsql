@@ -29,5 +29,5 @@ jobs:
     - run: go get -t -v ./...
     - run: go test -coverprofile=coverage.txt -covermode=atomic ./...
       env:
-        DB_URL: postgres://postgres@localhost:5432/postgres?sslmode=disable
+        DB_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
     - uses: codecov/codecov-action@v1
