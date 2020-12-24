@@ -389,6 +389,33 @@ func TestSelect(t *testing.T) {
 		assert.Empty(t, args)
 	})
 
+	t.Run("select nested and", func(t *testing.T) {
+		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
+			b.Columns("*")
+			b.From("table")
+			b.Where(func(b pgstmt.Cond) {
+				b.EqRaw("a", 1)
+				b.EqRaw("b", 1)
+				b.And(func(b pgstmt.Cond) {
+					b.And(func(b pgstmt.Cond) {
+						b.EqRaw("c", 1)
+						b.EqRaw("d", 1)
+					})
+					b.Or(func(b pgstmt.Cond) {
+						b.EqRaw("e", 1)
+						b.EqRaw("f", 1)
+					})
+				})
+			})
+		}).SQL()
+
+		assert.Equal(t,
+			"select * from table where (a = 1 and b = 1) and ((c = 1 and d = 1) or (e = 1 and f = 1))",
+			q,
+		)
+		assert.Empty(t, args)
+	})
+
 	t.Run("select without op but nested", func(t *testing.T) {
 		q, args := pgstmt.Select(func(b pgstmt.SelectStatement) {
 			b.Columns("*")

@@ -227,6 +227,14 @@ func (st *cond) build() []interface{} {
 
 	if st.ops.empty() {
 		st.chain.popFront()
+
+		if len(st.chain.q) > 1 {
+			var b parenGroup
+			b.sep = " "
+			b.push(st.chain.q...)
+			return []interface{}{&b}
+		}
+
 		return st.chain.q
 	}
 
