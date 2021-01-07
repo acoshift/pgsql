@@ -25,6 +25,11 @@ type SelectStatement interface {
 	FullOuterJoinSelect(f func(b SelectStatement), as string) Join
 	LeftJoinSelect(f func(b SelectStatement), as string) Join
 	RightJoinSelect(f func(b SelectStatement), as string) Join
+	JoinLateralSelect(f func(b SelectStatement), as string) Join
+	InnerJoinLateralSelect(f func(b SelectStatement), as string) Join
+	FullOuterJoinLateralSelect(f func(b SelectStatement), as string) Join
+	LeftJoinLateralSelect(f func(b SelectStatement), as string) Join
+	RightJoinLateralSelect(f func(b SelectStatement), as string) Join
 	Where(f func(b Cond))
 	GroupBy(col ...string)
 	Having(f func(b Cond))
@@ -190,6 +195,26 @@ func (st *selectStmt) LeftJoinSelect(f func(b SelectStatement), as string) Join 
 
 func (st *selectStmt) RightJoinSelect(f func(b SelectStatement), as string) Join {
 	return st.joinSelect("right join", f, as)
+}
+
+func (st *selectStmt) JoinLateralSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("join lateral", f, as)
+}
+
+func (st *selectStmt) InnerJoinLateralSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("inner join lateral", f, as)
+}
+
+func (st *selectStmt) FullOuterJoinLateralSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("full outer join lateral", f, as)
+}
+
+func (st *selectStmt) LeftJoinLateralSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("left join lateral", f, as)
+}
+
+func (st *selectStmt) RightJoinLateralSelect(f func(b SelectStatement), as string) Join {
+	return st.joinSelect("right join lateral", f, as)
 }
 
 func (st *selectStmt) Where(f func(b Cond)) {

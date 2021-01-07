@@ -380,6 +380,46 @@ func TestSelect(t *testing.T) {
 			"select distinct on (col_1, col_2) col_1, col_3",
 			nil,
 		},
+		{
+			"left join lateral",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("m.name")
+				b.From("manufacturers m")
+				b.LeftJoin("lateral get_product_names(m.id) pname").On(func(b pgstmt.Cond) {
+					b.Raw("true")
+				})
+				b.Where(func(b pgstmt.Cond) {
+					b.IsNull("pname")
+				})
+			}),
+			`
+				select m.name
+				from manufacturers m left join lateral get_product_names(m.id) pname on (true)
+				where (pname is null)
+			`,
+			nil,
+		},
+		{
+			"left join lateral select",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("m.name")
+				b.From("manufacturers m")
+				b.LeftJoinLateralSelect(func(b pgstmt.SelectStatement) {
+					b.Columns("get_product_names(m.id) pname")
+				}, "t").On(func(b pgstmt.Cond) {
+					b.Raw("true")
+				})
+				b.Where(func(b pgstmt.Cond) {
+					b.IsNull("pname")
+				})
+			}),
+			`
+				select m.name
+				from manufacturers m left join lateral (select get_product_names(m.id) pname) t on (true)
+				where (pname is null)
+			`,
+			nil,
+		},
 	}
 
 	for _, tC := range cases {
