@@ -73,8 +73,9 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 		return tx.Commit()
 	}
 
+	var err error
 	for i := 0; i < option.MaxAttempts; i++ {
-		err := f()
+		err = f()
 		if err == nil || errors.Is(err, ErrAbortTx) {
 			return nil
 		}
@@ -84,5 +85,5 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 		}
 	}
 
-	return nil
+	return err
 }
