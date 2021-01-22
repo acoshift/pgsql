@@ -40,7 +40,7 @@ func Middleware(db DB) func(h http.Handler) http.Handler {
 }
 
 // RunInTx starts sql tx if not started
-func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
+func RunInTxOptions(ctx context.Context, opt *pgsql.TxOptions, f func(ctx context.Context) error) error {
 	// already in tx, do nothing
 	if _, ok := ctx.Value(ctxKeyQueryer{}).(*sql.Tx); ok {
 		return f(ctx)
@@ -49,7 +49,7 @@ func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
 	db := ctx.Value(ctxKeyDB{}).(pgsql.BeginTxer)
 	var cm *onCommitted
 	abort := false
-	err := pgsql.RunInTxContext(ctx, db, nil, func(tx *sql.Tx) error {
+	err := pgsql.RunInTxContext(ctx, db, opt, func(tx *sql.Tx) error {
 		cm = &onCommitted{} // reset when retry
 		ctx := context.WithValue(ctx, ctxKeyQueryer{}, tx)
 		ctx = context.WithValue(ctx, ctxKeyCommitted{}, cm)
@@ -68,6 +68,11 @@ func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
 		}
 	}
 	return nil
+}
+
+// RunInTx calls RunInTxOptions with default options
+func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
+	return RunInTxOptions(ctx, nil, f)
 }
 
 // IsInTx checks is context inside RunInTx
