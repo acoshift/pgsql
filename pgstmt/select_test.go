@@ -27,6 +27,24 @@ func TestSelect(t *testing.T) {
 			nil,
 		},
 		{
+			"select arg",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns(pgstmt.Arg("x"))
+			}),
+			"select $1",
+			[]interface{}{
+				"x",
+			},
+		},
+		{
+			"select without arg",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns(1, "x", 1.2)
+			}),
+			"select 1, x, 1.2",
+			nil,
+		},
+		{
 			"select from",
 			pgstmt.Select(func(b pgstmt.SelectStatement) {
 				b.Columns("id", "name")

@@ -7,10 +7,14 @@ func Select(f func(b SelectStatement)) *Result {
 	return newResult(build(st.make()))
 }
 
+// type Column interface {
+// 	type string, arg
+// }
+
 // SelectStatement is the select statement builder
 type SelectStatement interface {
 	Distinct() Distinct
-	Columns(col ...string)
+	Columns(col ...interface{})
 	ColumnSelect(f func(b SelectStatement), as string)
 	From(table ...string)
 	FromSelect(f func(b SelectStatement), as string)
@@ -77,8 +81,8 @@ func (st *selectStmt) Distinct() Distinct {
 	return st.distinct
 }
 
-func (st *selectStmt) Columns(col ...string) {
-	st.columns.pushString(col...)
+func (st *selectStmt) Columns(col ...interface{}) {
+	st.columns.push(col...)
 }
 
 func (st *selectStmt) ColumnSelect(f func(b SelectStatement), as string) {
