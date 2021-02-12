@@ -7,10 +7,6 @@ func Select(f func(b SelectStatement)) *Result {
 	return newResult(build(st.make()))
 }
 
-// type Column interface {
-// 	type string, arg
-// }
-
 // SelectStatement is the select statement builder
 type SelectStatement interface {
 	Distinct() Distinct
