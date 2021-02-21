@@ -1,5 +1,9 @@
 package pgstmt
 
+import (
+	"github.com/lib/pq"
+)
+
 // Insert builds insert statement
 func Insert(f func(b InsertStatement)) *Result {
 	var st insertStmt
@@ -96,7 +100,7 @@ func (st *insertStmt) make() *buffer {
 	var b buffer
 	b.push("insert")
 	if st.table != "" {
-		b.push("into", st.table)
+		b.push("into", pq.QuoteIdentifier(st.table))
 	}
 	if !st.columns.empty() {
 		b.push(&st.columns)

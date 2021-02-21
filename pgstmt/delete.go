@@ -1,5 +1,9 @@
 package pgstmt
 
+import (
+	"github.com/lib/pq"
+)
+
 // Delete builds delete statement
 func Delete(f func(b DeleteStatement)) *Result {
 	var st deleteStmt
@@ -33,7 +37,7 @@ func (st *deleteStmt) Returning(col ...string) {
 
 func (st *deleteStmt) make() *buffer {
 	var b buffer
-	b.push("delete from", st.from)
+	b.push("delete from", pq.QuoteIdentifier(st.from))
 	if !st.where.empty() {
 		b.push("where")
 		b.push(st.where.build()...)

@@ -22,7 +22,7 @@ func TestInsert(t *testing.T) {
 		}).SQL()
 
 		assert.Equal(t,
-			"insert into users (username, name, created_at) values ($1, $2, default), ($3, $4, $5) on conflict (username) do nothing returning id, name",
+			`insert into "users" (username, name, created_at) values ($1, $2, default), ($3, $4, $5) on conflict (username) do nothing returning id, name`,
 			q,
 		)
 		assert.EqualValues(t,
@@ -47,7 +47,7 @@ func TestInsert(t *testing.T) {
 		}).SQL()
 
 		assert.Equal(t,
-			"insert into films select * from tmp_films where (date_prod < 2004-05-07)",
+			`insert into "films" select * from tmp_films where (date_prod < 2004-05-07)`,
 			q,
 		)
 		assert.Empty(t, args)
@@ -67,7 +67,7 @@ func TestInsert(t *testing.T) {
 
 		assert.Equal(t,
 			stripSpace(`
-				insert into users (username, email)
+				insert into "users" (username, email)
 				values ($1, $2)
 				on conflict (username) do update
 				set email = excluded.email,
@@ -98,7 +98,7 @@ func TestInsert(t *testing.T) {
 
 		assert.Equal(t,
 			stripSpace(`
-				insert into users (username, email)
+				insert into "users" (username, email)
 				values ($1, $2)
 				on conflict on constraint username_key do update
 				set email = excluded.email,

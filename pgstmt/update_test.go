@@ -25,7 +25,7 @@ func TestUpdate(t *testing.T) {
 
 		assert.Equal(t,
 			stripSpace(`
-				update users
+				update "users"
 				set name = $1,
 					(email, address, updated_at) = row($2, $3, now()),
 					age = 1
@@ -63,7 +63,7 @@ func TestUpdate(t *testing.T) {
 
 		assert.Equal(t,
 			stripSpace(`
-				update users
+				update "users"
 				set (name, age, updated_at) = (select name, age, now()
 											   from users
 											   where (id = $1)),
@@ -98,7 +98,7 @@ func TestUpdate(t *testing.T) {
 
 		assert.Equal(t,
 			stripSpace(`
-				update users
+				update "users"
 				set name = p.name,
 					address = p.address,
 					updated_at = now()

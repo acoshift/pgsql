@@ -25,7 +25,7 @@ func TestDelete(t *testing.T) {
 	}).SQL()
 
 	assert.Equal(t,
-		"delete from users where (username = $1 and is_active = $2) or (age > $3 and age <= $4) returning id, name",
+		`delete from "users" where (username = $1 and is_active = $2) or (age > $3 and age <= $4) returning id, name`,
 		q,
 	)
 	assert.EqualValues(t,

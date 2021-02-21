@@ -1,5 +1,9 @@
 package pgstmt
 
+import (
+	"github.com/lib/pq"
+)
+
 // Update builds update statement
 func Update(f func(b UpdateStatement)) *Result {
 	var st updateStmt
@@ -99,7 +103,7 @@ func (st *updateStmt) make() *buffer {
 	var b buffer
 	b.push("update")
 	if st.table != "" {
-		b.push(st.table)
+		b.push(pq.QuoteIdentifier(st.table))
 	}
 	if !st.sets.empty() {
 		b.push("set", &st.sets)
