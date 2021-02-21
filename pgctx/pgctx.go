@@ -39,20 +39,25 @@ func Middleware(db DB) func(h http.Handler) http.Handler {
 	}
 }
 
-// RunInTx starts sql tx if not started
+type wrapTx struct {
+	*sql.Tx
+	onCommitted []func(ctx context.Context)
+}
+
+var _ Queryer = &wrapTx{}
+
+// RunInTxOptions starts sql tx if not started
 func RunInTxOptions(ctx context.Context, opt *pgsql.TxOptions, f func(ctx context.Context) error) error {
-	// already in tx, do nothing
-	if _, ok := ctx.Value(ctxKeyQueryer{}).(*sql.Tx); ok {
+	if IsInTx(ctx) {
 		return f(ctx)
 	}
 
 	db := ctx.Value(ctxKeyDB{}).(pgsql.BeginTxer)
-	var cm *onCommitted
+	var pTx wrapTx
 	abort := false
 	err := pgsql.RunInTxContext(ctx, db, opt, func(tx *sql.Tx) error {
-		cm = &onCommitted{} // reset when retry
-		ctx := context.WithValue(ctx, ctxKeyQueryer{}, tx)
-		ctx = context.WithValue(ctx, ctxKeyCommitted{}, cm)
+		pTx = wrapTx{Tx: tx}
+		ctx := context.WithValue(ctx, ctxKeyQueryer{}, &pTx)
 		err := f(ctx)
 		if errors.Is(err, pgsql.ErrAbortTx) {
 			abort = true
@@ -62,8 +67,8 @@ func RunInTxOptions(ctx context.Context, opt *pgsql.TxOptions, f func(ctx contex
 	if err != nil {
 		return err
 	}
-	if !abort && cm != nil {
-		for _, f := range cm.f {
+	if !abort && len(pTx.onCommitted) > 0 {
+		for _, f := range pTx.onCommitted {
 			f(ctx)
 		}
 	}
@@ -77,7 +82,7 @@ func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
 
 // IsInTx checks is context inside RunInTx
 func IsInTx(ctx context.Context) bool {
-	_, ok := ctx.Value(ctxKeyQueryer{}).(*sql.Tx)
+	_, ok := ctx.Value(ctxKeyQueryer{}).(*wrapTx)
 	return ok
 }
 
@@ -92,19 +97,14 @@ func Committed(ctx context.Context, f func(ctx context.Context)) {
 		return
 	}
 
-	p := ctx.Value(ctxKeyCommitted{}).(*onCommitted)
-	p.f = append(p.f, f)
+	pTx := ctx.Value(ctxKeyQueryer{}).(*wrapTx)
+	pTx.onCommitted = append(pTx.onCommitted, f)
 }
 
 type (
-	ctxKeyDB        struct{}
-	ctxKeyQueryer   struct{}
-	ctxKeyCommitted struct{}
+	ctxKeyDB      struct{}
+	ctxKeyQueryer struct{}
 )
-
-type onCommitted struct {
-	f []func(ctx context.Context)
-}
 
 func q(ctx context.Context) Queryer {
 	return ctx.Value(ctxKeyQueryer{}).(Queryer)
