@@ -232,6 +232,20 @@ func TestSelect(t *testing.T) {
 			},
 		},
 		{
+			"select all",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("*")
+				b.From("table")
+				b.Where(func(b pgstmt.Cond) {
+					b.Ne("x", pgstmt.All(pq.Array([]int64{1, 2})))
+				})
+			}),
+			"select * from table where (x != all($1))",
+			[]interface{}{
+				pq.Array([]int64{1, 2}),
+			},
+		},
+		{
 			"select in",
 			pgstmt.Select(func(b pgstmt.SelectStatement) {
 				b.Columns("*")

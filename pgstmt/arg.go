@@ -2,21 +2,13 @@ package pgstmt
 
 // Arg marks value as argument to replace with $? when build query
 func Arg(v interface{}) interface{} {
-	if _, ok := v.(arg); ok {
-		return v
-	}
-	if _, ok := v.(notArg); ok {
-		return v
-	}
-	if _, ok := v.(any); ok {
-		return v
-	}
 	switch v.(type) {
 	default:
 		return arg{v}
 	case arg:
 	case notArg:
-	case any:
+	case _any:
+	case all:
 	case defaultValue:
 	}
 	return v
@@ -40,10 +32,19 @@ type notArg struct {
 
 // Any marks value as any($?)
 func Any(v interface{}) interface{} {
-	return any{v}
+	return _any{v}
 }
 
-type any struct {
+type _any struct {
+	value interface{}
+}
+
+// All marks value as all($?)
+func All(v interface{}) interface{} {
+	return all{v}
+}
+
+type all struct {
 	value interface{}
 }
 
