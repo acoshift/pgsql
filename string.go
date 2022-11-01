@@ -5,7 +5,7 @@ import (
 	"database/sql/driver"
 )
 
-// NullString scans null into empty string
+// NullString scans null into empty string and convert empty string into sql null
 func NullString(s *string) interface {
 	driver.Valuer
 	sql.Scanner
