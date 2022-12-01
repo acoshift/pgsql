@@ -24,7 +24,6 @@ type Queryer interface {
 
 func NewKeyContext(ctx context.Context, key any, db DB) context.Context {
 	ctx = context.WithValue(ctx, ctxKeyDB{key}, db)
-	ctx = context.WithValue(ctx, ctxKeyQueryer{}, db)
 	return ctx
 }
 
@@ -47,6 +46,12 @@ func Middleware(db DB) func(h http.Handler) http.Handler {
 	return KeyMiddleware(nil, db)
 }
 
+// With creates new empty key context with db from keyed context
+func With(ctx context.Context, key any) context.Context {
+	db := ctx.Value(ctxKeyDB{key})
+	return context.WithValue(ctx, ctxKeyDB{}, db)
+}
+
 type wrapTx struct {
 	*sql.Tx
 	onCommitted []func(ctx context.Context)
@@ -54,12 +59,13 @@ type wrapTx struct {
 
 var _ Queryer = &wrapTx{}
 
-func RunInTxOptionsKey(ctx context.Context, key any, opt *pgsql.TxOptions, f func(ctx context.Context) error) error {
+// RunInTxOptions starts sql tx if not started
+func RunInTxOptions(ctx context.Context, opt *pgsql.TxOptions, f func(ctx context.Context) error) error {
 	if IsInTx(ctx) {
 		return f(ctx)
 	}
 
-	db := ctx.Value(ctxKeyDB{key}).(pgsql.BeginTxer)
+	db := ctx.Value(ctxKeyDB{}).(pgsql.BeginTxer)
 	var pTx wrapTx
 	abort := false
 	err := pgsql.RunInTxContext(ctx, db, opt, func(tx *sql.Tx) error {
@@ -80,15 +86,6 @@ func RunInTxOptionsKey(ctx context.Context, key any, opt *pgsql.TxOptions, f fun
 		}
 	}
 	return nil
-}
-
-// RunInTxOptions starts sql tx if not started
-func RunInTxOptions(ctx context.Context, opt *pgsql.TxOptions, f func(ctx context.Context) error) error {
-	return RunInTxOptionsKey(ctx, nil, opt, f)
-}
-
-func RunInTxKey(ctx context.Context, f func(ctx context.Context) error) error {
-	return RunInTxOptionsKey(ctx, nil, nil, f)
 }
 
 // RunInTx calls RunInTxOptions with default options
@@ -124,19 +121,11 @@ type (
 	ctxKeyQueryer struct{}
 )
 
-func qKey(ctx context.Context, key any) Queryer {
+func q(ctx context.Context) Queryer {
 	if q, ok := ctx.Value(ctxKeyQueryer{}).(Queryer); ok {
 		return q
 	}
-	return ctx.Value(ctxKeyDB{key}).(Queryer)
-}
-
-func q(ctx context.Context) Queryer {
-	return qKey(ctx, nil)
-}
-
-func QueryRowKey(ctx context.Context, key any, query string, args ...interface{}) *sql.Row {
-	return qKey(ctx, key).QueryRowContext(ctx, query, args...)
+	return ctx.Value(ctxKeyDB{}).(Queryer)
 }
 
 // QueryRow calls db.QueryRowContext
@@ -144,17 +133,9 @@ func QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	return q(ctx).QueryRowContext(ctx, query, args...)
 }
 
-func QueryKey(ctx context.Context, key any, query string, args ...interface{}) (*sql.Rows, error) {
-	return qKey(ctx, key).QueryContext(ctx, query, args...)
-}
-
 // Query calls db.QueryContext
 func Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	return q(ctx).QueryContext(ctx, query, args...)
-}
-
-func ExecKey(ctx context.Context, key any, query string, args ...interface{}) (sql.Result, error) {
-	return qKey(ctx, key).ExecContext(ctx, query, args...)
 }
 
 // Exec calls db.ExecContext
@@ -162,17 +143,9 @@ func Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, e
 	return q(ctx).ExecContext(ctx, query, args...)
 }
 
-func IterKey(ctx context.Context, key any, iter pgsql.Iterator, query string, args ...interface{}) error {
-	return pgsql.IterContext(ctx, qKey(ctx, key), iter, query, args...)
-}
-
 // Iter calls pgsql.IterContext
 func Iter(ctx context.Context, iter pgsql.Iterator, query string, args ...interface{}) error {
 	return pgsql.IterContext(ctx, q(ctx), iter, query, args...)
-}
-
-func PrepareKey(ctx context.Context, key any, query string) (*sql.Stmt, error) {
-	return qKey(ctx, key).PrepareContext(ctx, query)
 }
 
 // Prepare calls db.PrepareContext
