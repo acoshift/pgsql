@@ -22,21 +22,33 @@ type Queryer interface {
 	PrepareContext(context.Context, string) (*sql.Stmt, error)
 }
 
+func NewKeyContext(ctx context.Context, key any, db DB) context.Context {
+	return context.WithValue(ctx, ctxKeyDB{key}, db)
+}
+
 // NewContext creates new context
 func NewContext(ctx context.Context, db DB) context.Context {
-	ctx = context.WithValue(ctx, ctxKeyDB{}, db)
-	ctx = context.WithValue(ctx, ctxKeyQueryer{}, db)
-	return ctx
+	return NewKeyContext(ctx, nil, db)
+}
+
+func KeyMiddleware(key any, db DB) func(h http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r = r.WithContext(NewKeyContext(r.Context(), key, db))
+			h.ServeHTTP(w, r)
+		})
+	}
 }
 
 // Middleware injects db into request's context
 func Middleware(db DB) func(h http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(NewContext(r.Context(), db))
-			h.ServeHTTP(w, r)
-		})
-	}
+	return KeyMiddleware(nil, db)
+}
+
+// With creates new empty key context with db from keyed context
+func With(ctx context.Context, key any) context.Context {
+	db := ctx.Value(ctxKeyDB{key})
+	return context.WithValue(ctx, ctxKeyDB{}, db)
 }
 
 type wrapTx struct {
@@ -102,12 +114,17 @@ func Committed(ctx context.Context, f func(ctx context.Context)) {
 }
 
 type (
-	ctxKeyDB      struct{}
+	ctxKeyDB      struct{
+		key any
+	}
 	ctxKeyQueryer struct{}
 )
 
 func q(ctx context.Context) Queryer {
-	return ctx.Value(ctxKeyQueryer{}).(Queryer)
+	if q, ok := ctx.Value(ctxKeyQueryer{}).(Queryer); ok {
+		return q
+	}
+	return ctx.Value(ctxKeyDB{}).(Queryer)
 }
 
 // QueryRow calls db.QueryRowContext

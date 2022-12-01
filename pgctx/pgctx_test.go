@@ -30,6 +30,19 @@ func TestNewContext(t *testing.T) {
 	})
 }
 
+type testKey1 struct{}
+
+func TestNewKeyContext(t *testing.T) {
+	t.Parallel()
+
+	assert.NotPanics(t, func() {
+		db, _, err := sqlmock.New()
+		assert.NoError(t, err)
+		ctx := pgctx.NewKeyContext(context.Background(), testKey1{}, db)
+		assert.NotNil(t, ctx)
+	})
+}
+
 func TestMiddleware(t *testing.T) {
 	t.Parallel()
 
@@ -50,6 +63,34 @@ func TestMiddleware(t *testing.T) {
 		})
 		assert.NotPanics(t, func() {
 			pgctx.Exec(ctx, "select 1")
+		})
+	})).ServeHTTP(w, r)
+	assert.True(t, called)
+}
+
+func TestKeyMiddleware(t *testing.T) {
+	t.Parallel()
+
+	db, _, err := sqlmock.New()
+	assert.NoError(t, err)
+
+	called := false
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	pgctx.KeyMiddleware(testKey1{}, db)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		ctx := r.Context()
+		assert.NotPanics(t, func() {
+			pgctx.QueryRow(pgctx.With(ctx, testKey1{}), "select 1")
+		})
+		assert.NotPanics(t, func() {
+			pgctx.Query(pgctx.With(ctx, testKey1{}), "select 1")
+		})
+		assert.NotPanics(t, func() {
+			pgctx.Exec(pgctx.With(ctx, testKey1{}), "select 1")
+		})
+		assert.Panics(t, func() {
+			pgctx.QueryRow(ctx, "select 1")
 		})
 	})).ServeHTTP(w, r)
 	assert.True(t, called)
