@@ -23,8 +23,7 @@ type Queryer interface {
 }
 
 func NewKeyContext(ctx context.Context, key any, db DB) context.Context {
-	ctx = context.WithValue(ctx, ctxKeyDB{key}, db)
-	return ctx
+	return context.WithValue(ctx, ctxKeyDB{key}, db)
 }
 
 // NewContext creates new context
