@@ -7,6 +7,7 @@ func Arg(v interface{}) interface{} {
 		return arg{v}
 	case arg:
 	case notArg:
+	case raw:
 	case _any:
 	case all:
 	case defaultValue:
@@ -27,6 +28,15 @@ func NotArg(v interface{}) interface{} {
 }
 
 type notArg struct {
+	value interface{}
+}
+
+// Raw marks value as raw sql without escape
+func Raw(v interface{}) interface{} {
+	return raw{v}
+}
+
+type raw struct {
 	value interface{}
 }
 

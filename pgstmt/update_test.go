@@ -15,7 +15,7 @@ func TestUpdate(t *testing.T) {
 		q, args := pgstmt.Update(func(b pgstmt.UpdateStatement) {
 			b.Table("users")
 			b.Set("name").To("test")
-			b.Set("email", "address", "updated_at").To("test@localhost", "123", pgstmt.NotArg("now()"))
+			b.Set("email", "address", "updated_at").To("test@localhost", "123", pgstmt.Raw("now()"))
 			b.Set("age").ToRaw(1)
 			b.Where(func(b pgstmt.Cond) {
 				b.Eq("id", 5)
