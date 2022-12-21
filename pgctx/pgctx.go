@@ -51,6 +51,14 @@ func With(ctx context.Context, key any) context.Context {
 	return context.WithValue(ctx, ctxKeyDB{}, db)
 }
 
+func GetDB(ctx context.Context) DB {
+	return ctx.Value(ctxKeyDB{}).(DB)
+}
+
+func GetDBKey(ctx context.Context, key any) DB {
+	return ctx.Value(ctxKeyDB{key}).(DB)
+}
+
 type wrapTx struct {
 	*sql.Tx
 	onCommitted []func(ctx context.Context)
@@ -114,7 +122,7 @@ func Committed(ctx context.Context, f func(ctx context.Context)) {
 }
 
 type (
-	ctxKeyDB      struct{
+	ctxKeyDB struct {
 		key any
 	}
 	ctxKeyQueryer struct{}
