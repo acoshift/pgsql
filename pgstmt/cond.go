@@ -54,7 +54,7 @@ func (st *cond) Op(field, op string, value interface{}) {
 func (st *cond) OpRaw(field, op string, rawValue interface{}) {
 	var x group
 	x.sep = " "
-	x.push(field, op, rawValue)
+	x.push(field, op, Raw(rawValue))
 	st.ops.push(&x)
 }
 

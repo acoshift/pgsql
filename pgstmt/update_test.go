@@ -2,6 +2,7 @@ package pgstmt_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -15,7 +16,7 @@ func TestUpdate(t *testing.T) {
 		q, args := pgstmt.Update(func(b pgstmt.UpdateStatement) {
 			b.Table("users")
 			b.Set("name").To("test")
-			b.Set("email", "address", "updated_at").To("test@localhost", "123", pgstmt.NotArg("now()"))
+			b.Set("email", "address", "updated_at").To("test@localhost", "123", pgstmt.Raw("now()"))
 			b.Set("age").ToRaw(1)
 			b.Where(func(b pgstmt.Cond) {
 				b.Eq("id", 5)
@@ -89,6 +90,7 @@ func TestUpdate(t *testing.T) {
 			b.Set("name").ToRaw("p.name")
 			b.Set("address").ToRaw("p.address")
 			b.Set("updated_at").ToRaw("now()")
+			b.Set("date").To(pgstmt.NotArg(time.Date(2022, 1, 2, 3, 4, 5, 6, time.UTC)))
 			b.From("users")
 			b.InnerJoin("profiles p").Using("email")
 			b.Where(func(b pgstmt.Cond) {
@@ -101,7 +103,8 @@ func TestUpdate(t *testing.T) {
 				update users
 				set name = p.name,
 					address = p.address,
-					updated_at = now()
+					updated_at = now(),
+					date = '2022-01-02 03:04:05.000000006Z'
 				from users
 				inner join profiles p using (email)
 				where (users.id = $1)

@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/lib/pq"
 )
 
 type buffer struct {
@@ -49,7 +52,7 @@ func build(b *buffer) (string, []interface{}) {
 		for _, x := range p {
 			switch x := x.(type) {
 			default:
-				q = append(q, convertToString(x))
+				q = append(q, convertToString(x, false))
 			case builder:
 				q = append(q, f(x.build(), " "))
 			case arg:
@@ -80,11 +83,14 @@ func build(b *buffer) (string, []interface{}) {
 	return query, args
 }
 
-func convertToString(x interface{}) string {
+func convertToString(x interface{}, quoteStr bool) string {
 	switch x := x.(type) {
 	default:
 		return fmt.Sprint(x)
 	case string:
+		if quoteStr {
+			return pq.QuoteLiteral(x)
+		}
 		return x
 	case int:
 		return strconv.Itoa(x)
@@ -94,8 +100,12 @@ func convertToString(x interface{}) string {
 		return strconv.FormatInt(x, 10)
 	case bool:
 		return strconv.FormatBool(x)
+	case time.Time:
+		return convertToString(string(pq.FormatTimestamp(x)), true)
 	case notArg:
-		return convertToString(x.value)
+		return convertToString(x.value, true)
+	case raw:
+		return fmt.Sprint(x.value)
 	case defaultValue:
 		return "default"
 	}
