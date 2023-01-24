@@ -59,6 +59,10 @@ func GetDBKey(ctx context.Context, key any) DB {
 	return ctx.Value(ctxKeyDB{key}).(DB)
 }
 
+func GetTx(ctx context.Context) *sql.Tx {
+	return ctx.Value(ctxKeyQueryer{}).(*wrapTx).Tx // panic if not in tx
+}
+
 type wrapTx struct {
 	*sql.Tx
 	onCommitted []func(ctx context.Context)
