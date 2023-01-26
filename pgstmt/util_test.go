@@ -15,5 +15,7 @@ func stripSpace(s string) string {
 		}
 		s = p
 	}
+	s = strings.ReplaceAll(s, "( ", "(")
+	s = strings.ReplaceAll(s, " )", ")")
 	return s
 }
