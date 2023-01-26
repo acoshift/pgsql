@@ -40,6 +40,33 @@ func TestUnion(t *testing.T) {
 			`,
 			nil,
 		},
+		{
+			"union nested",
+			pgstmt.Union(func(b pgstmt.UnionStatement) {
+				b.Union(func(b pgstmt.UnionStatement) {
+					b.Select(func(b pgstmt.SelectStatement) {
+						b.Columns("id")
+						b.From("table1")
+					})
+					b.Select(func(b pgstmt.SelectStatement) {
+						b.Columns("id")
+						b.From("table2")
+					})
+				})
+				b.Select(func(b pgstmt.SelectStatement) {
+					b.Columns("id")
+					b.From("table3")
+				})
+			}),
+			`
+				(
+					(select id from table1)
+					union (select id from table2)
+				)
+				union (select id from table3)
+			`,
+			nil,
+		},
 	}
 
 	for _, tC := range cases {
