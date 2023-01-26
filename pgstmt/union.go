@@ -11,12 +11,14 @@ type UnionStatement interface {
 	AllSelect(f func(b SelectStatement))
 	OrderBy(col string) OrderBy
 	Limit(n int64)
+	Offset(n int64)
 }
 
 type unionStmt struct {
 	b       buffer
 	orderBy group
 	limit   *int64
+	offset  *int64
 }
 
 func (st *unionStmt) Select(f func(b SelectStatement)) {
@@ -53,6 +55,10 @@ func (st *unionStmt) Limit(n int64) {
 	st.limit = &n
 }
 
+func (st *unionStmt) Offset(n int64) {
+	st.offset = &n
+}
+
 func (st *unionStmt) make() *buffer {
 	var b buffer
 	b.push(&st.b)
@@ -61,6 +67,9 @@ func (st *unionStmt) make() *buffer {
 	}
 	if st.limit != nil {
 		b.push("limit", *st.limit)
+	}
+	if st.offset != nil {
+		b.push("offset", *st.offset)
 	}
 	return &b
 }

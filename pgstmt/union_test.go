@@ -30,12 +30,13 @@ func TestUnion(t *testing.T) {
 				})
 				b.OrderBy("id")
 				b.Limit(10)
+				b.Offset(2)
 			}),
 			`
 				(select id from table1)
 				union all (select id from table2)
 				order by id
-				limit 10
+				limit 10 offset 2
 			`,
 			nil,
 		},
