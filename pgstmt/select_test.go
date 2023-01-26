@@ -452,6 +452,37 @@ func TestSelect(t *testing.T) {
 			`,
 			nil,
 		},
+		{
+			"inner join union",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("id")
+				b.From("table1")
+				b.InnerJoinUnion(func(b pgstmt.UnionStatement) {
+					b.Select(func(b pgstmt.SelectStatement) {
+						b.Columns("id")
+						b.From("table2")
+					})
+					b.AllSelect(func(b pgstmt.SelectStatement) {
+						b.Columns("id")
+						b.From("table3")
+					})
+					b.OrderBy("id").Desc()
+					b.Limit(100)
+				}, "t").Using("id")
+			}),
+			`
+				select id
+				from table1
+				inner join (
+					(select id from table2)
+					union all
+					(select id from table3)
+					order by id desc
+					limit 100
+				) t using (id)
+			`,
+			nil,
+		},
 	}
 
 	for _, tC := range cases {
