@@ -57,6 +57,16 @@ func TestUnion(t *testing.T) {
 					b.Columns("id")
 					b.From("table3")
 				})
+				b.AllUnion(func(b pgstmt.UnionStatement) {
+					b.Select(func(b pgstmt.SelectStatement) {
+						b.Columns("id")
+						b.From("table4")
+					})
+					b.Select(func(b pgstmt.SelectStatement) {
+						b.Columns("id")
+						b.From("table5")
+					})
+				})
 			}),
 			`
 				(
@@ -64,6 +74,11 @@ func TestUnion(t *testing.T) {
 					union (select id from table2)
 				)
 				union (select id from table3)
+				union all (
+					(select id from table4)
+					union
+					(select id from table5)
+				)
 			`,
 			nil,
 		},
