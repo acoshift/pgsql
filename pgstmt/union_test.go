@@ -15,7 +15,7 @@ func TestUnion(t *testing.T) {
 		name   string
 		result *pgstmt.Result
 		query  string
-		args   []interface{}
+		args   []any
 	}{
 		{
 			"union select",

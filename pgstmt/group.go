@@ -1,7 +1,7 @@
 package pgstmt
 
 type group struct {
-	q   []interface{}
+	q   []any
 	sep string
 }
 
@@ -16,7 +16,7 @@ func (b *group) empty() bool {
 	return len(b.q) == 0
 }
 
-func (b *group) push(q ...interface{}) {
+func (b *group) push(q ...any) {
 	b.q = append(b.q, q...)
 }
 
@@ -26,7 +26,7 @@ func (b *group) pushString(q ...string) {
 	}
 }
 
-func withGroup(sep string, q ...interface{}) interface{} {
+func withGroup(sep string, q ...any) any {
 	var g group
 	g.sep = sep
 	g.push(q...)
@@ -38,19 +38,19 @@ type parenGroup struct {
 	prefix string
 }
 
-func paren(q ...interface{}) interface{} {
+func paren(q ...any) any {
 	var p parenGroup
 	p.push(q...)
 	return &p
 }
 
-func parenString(q ...string) interface{} {
+func parenString(q ...string) any {
 	var p parenGroup
 	p.pushString(q...)
 	return &p
 }
 
-func withParen(sep string, q ...interface{}) interface{} {
+func withParen(sep string, q ...any) any {
 	var p parenGroup
 	p.sep = sep
 	p.push(q...)

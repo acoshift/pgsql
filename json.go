@@ -8,7 +8,7 @@ import (
 )
 
 // JSON wraps value with scanner and valuer
-func JSON(value interface{}) interface {
+func JSON(value any) interface {
 	driver.Valuer
 	sql.Scanner
 } {
@@ -16,10 +16,10 @@ func JSON(value interface{}) interface {
 }
 
 type jsonValue struct {
-	value interface{}
+	value any
 }
 
-func (v *jsonValue) Scan(src interface{}) error {
+func (v *jsonValue) Scan(src any) error {
 	if src == nil {
 		return nil
 	}

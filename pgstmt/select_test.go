@@ -16,7 +16,7 @@ func TestSelect(t *testing.T) {
 		name   string
 		result *pgstmt.Result
 		query  string
-		args   []interface{}
+		args   []any
 	}{
 		{
 			"only select",
@@ -32,7 +32,7 @@ func TestSelect(t *testing.T) {
 				b.Columns(pgstmt.Arg("x"))
 			}),
 			"select $1",
-			[]interface{}{
+			[]any{
 				"x",
 			},
 		},
@@ -93,7 +93,7 @@ func TestSelect(t *testing.T) {
 					  from profile p
 					  left join noti n on (n.id = p.id and n.user_id = $1)) t
 			`,
-			[]interface{}{
+			[]any{
 				1,
 			},
 		},
@@ -115,7 +115,7 @@ func TestSelect(t *testing.T) {
 				})
 			}),
 			"select id, name from users where (id = $1 and name = $2 and is_active = $3) and ((age = $4) or (age = $5))",
-			[]interface{}{
+			[]any{
 				3,
 				"test",
 				true,
@@ -135,7 +135,7 @@ func TestSelect(t *testing.T) {
 				b.OrderBy("id").Desc()
 			}),
 			"select id, name from users where (id = $1) order by created_at asc nulls last, id desc",
-			[]interface{}{
+			[]any{
 				1,
 			},
 		},
@@ -152,7 +152,7 @@ func TestSelect(t *testing.T) {
 				b.Offset(10)
 			}),
 			"select id, name from users where (id = $1) order by id limit 5 offset 10",
-			[]interface{}{
+			[]any{
 				1,
 			},
 		},
@@ -227,7 +227,7 @@ func TestSelect(t *testing.T) {
 				})
 			}),
 			"select * from table where (x = any($1))",
-			[]interface{}{
+			[]any{
 				pq.Array([]int64{1, 2}),
 			},
 		},
@@ -241,7 +241,7 @@ func TestSelect(t *testing.T) {
 				})
 			}),
 			"select * from table where (x != all($1))",
-			[]interface{}{
+			[]any{
 				pq.Array([]int64{1, 2}),
 			},
 		},
@@ -255,7 +255,7 @@ func TestSelect(t *testing.T) {
 				})
 			}),
 			"select * from table where (x in ($1, $2))",
-			[]interface{}{
+			[]any{
 				1,
 				2,
 			},
@@ -285,7 +285,7 @@ func TestSelect(t *testing.T) {
 				})
 			}),
 			"select * from table where (x not in ($1, $2))",
-			[]interface{}{
+			[]any{
 				1,
 				2,
 			},

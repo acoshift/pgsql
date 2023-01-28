@@ -1,7 +1,7 @@
 package pgstmt
 
 // Arg marks value as argument to replace with $? when build query
-func Arg(v interface{}) interface{} {
+func Arg(v any) any {
 	switch v.(type) {
 	default:
 		return arg{v}
@@ -16,11 +16,11 @@ func Arg(v interface{}) interface{} {
 }
 
 type arg struct {
-	value interface{}
+	value any
 }
 
 // NotArg marks value as non-argument
-func NotArg(v interface{}) interface{} {
+func NotArg(v any) any {
 	if _, ok := v.(notArg); ok {
 		return v
 	}
@@ -28,37 +28,37 @@ func NotArg(v interface{}) interface{} {
 }
 
 type notArg struct {
-	value interface{}
+	value any
 }
 
 // Raw marks value as raw sql without escape
-func Raw(v interface{}) interface{} {
+func Raw(v any) any {
 	return raw{v}
 }
 
 type raw struct {
-	value interface{}
+	value any
 }
 
 // Any marks value as any($?)
-func Any(v interface{}) interface{} {
+func Any(v any) any {
 	return _any{v}
 }
 
 type _any struct {
-	value interface{}
+	value any
 }
 
 // All marks value as all($?)
-func All(v interface{}) interface{} {
+func All(v any) any {
 	return all{v}
 }
 
 type all struct {
-	value interface{}
+	value any
 }
 
 // Default use for insert default value
-var Default interface{} = defaultValue{}
+var Default any = defaultValue{}
 
 type defaultValue struct{}

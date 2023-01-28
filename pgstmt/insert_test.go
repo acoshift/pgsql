@@ -26,7 +26,7 @@ func TestInsert(t *testing.T) {
 			q,
 		)
 		assert.EqualValues(t,
-			[]interface{}{
+			[]any{
 				"tester1", "Tester 1",
 				"tester2", "Tester 2", "now()",
 			},
@@ -77,7 +77,7 @@ func TestInsert(t *testing.T) {
 			q,
 		)
 		assert.EqualValues(t,
-			[]interface{}{
+			[]any{
 				"tester1", "tester1@localhost",
 			},
 			args,
@@ -108,7 +108,7 @@ func TestInsert(t *testing.T) {
 			q,
 		)
 		assert.EqualValues(t,
-			[]interface{}{
+			[]any{
 				"tester1", "tester1@localhost",
 			},
 			args,

@@ -12,7 +12,7 @@ type Time struct {
 }
 
 // Scan implements Scanner interface
-func (t *Time) Scan(src interface{}) error {
+func (t *Time) Scan(src any) error {
 	t.Time, _ = src.(time.Time)
 	return nil
 }

@@ -36,7 +36,7 @@ func TestUpdate(t *testing.T) {
 			q,
 		)
 		assert.EqualValues(t,
-			[]interface{}{
+			[]any{
 				"test",
 				"test@localhost", "123",
 				5,
@@ -75,7 +75,7 @@ func TestUpdate(t *testing.T) {
 			q,
 		)
 		assert.EqualValues(t,
-			[]interface{}{
+			[]any{
 				6,
 				"test@localhost", "123",
 				5,
@@ -112,7 +112,7 @@ func TestUpdate(t *testing.T) {
 			q,
 		)
 		assert.EqualValues(t,
-			[]interface{}{
+			[]any{
 				2,
 			},
 			args,

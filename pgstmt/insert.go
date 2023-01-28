@@ -14,8 +14,8 @@ type InsertStatement interface {
 	OverridingSystemValue()
 	OverridingUserValue()
 	DefaultValues()
-	Value(value ...interface{})
-	Values(values ...interface{})
+	Value(value ...any)
+	Values(values ...any)
 	Select(f func(b SelectStatement))
 	OnConflict(target ...string) OnConflict
 	OnConflictOnConstraint(constraintName string) OnConflict
@@ -58,7 +58,7 @@ func (st *insertStmt) DefaultValues() {
 	st.defaultValues = true
 }
 
-func (st *insertStmt) Value(value ...interface{}) {
+func (st *insertStmt) Value(value ...any) {
 	var x parenGroup
 	for _, v := range value {
 		x.push(Arg(v))
@@ -66,7 +66,7 @@ func (st *insertStmt) Value(value ...interface{}) {
 	st.values.push(&x)
 }
 
-func (st *insertStmt) Values(values ...interface{}) {
+func (st *insertStmt) Values(values ...any) {
 	for _, value := range values {
 		st.Value(value)
 	}

@@ -10,7 +10,7 @@ func Select(f func(b SelectStatement)) *Result {
 // SelectStatement is the select statement builder
 type SelectStatement interface {
 	Distinct() Distinct
-	Columns(col ...interface{})
+	Columns(col ...any)
 	ColumnSelect(f func(b SelectStatement), as string)
 	From(table ...string)
 	FromSelect(f func(b SelectStatement), as string)
@@ -53,8 +53,8 @@ type Distinct interface {
 }
 
 type Values interface {
-	Value(value ...interface{})
-	Values(values ...interface{})
+	Value(value ...any)
+	Values(values ...any)
 }
 
 type OrderBy interface {
@@ -87,7 +87,7 @@ func (st *selectStmt) Distinct() Distinct {
 	return st.distinct
 }
 
-func (st *selectStmt) Columns(col ...interface{}) {
+func (st *selectStmt) Columns(col ...any) {
 	st.columns.push(col...)
 }
 
@@ -352,7 +352,7 @@ func (st *join) Using(col ...string) {
 	st.using.push(parenString(col...))
 }
 
-func (st *join) build() []interface{} {
+func (st *join) build() []any {
 	var b buffer
 	b.push(st.typ, st.table)
 	if !st.using.empty() {
@@ -391,7 +391,7 @@ func (st *orderBy) NullsLast() OrderBy {
 	return st
 }
 
-func (st *orderBy) build() []interface{} {
+func (st *orderBy) build() []any {
 	var b buffer
 	b.push(st.col)
 	if st.direction != "" {
@@ -407,7 +407,7 @@ type values struct {
 	group
 }
 
-func (st *values) Value(value ...interface{}) {
+func (st *values) Value(value ...any) {
 	var x parenGroup
 	for _, v := range value {
 		x.push(Arg(v))
@@ -415,7 +415,7 @@ func (st *values) Value(value ...interface{}) {
 	st.push(&x)
 }
 
-func (st *values) Values(values ...interface{}) {
+func (st *values) Values(values ...any) {
 	for _, value := range values {
 		st.Value(value)
 	}

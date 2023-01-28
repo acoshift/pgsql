@@ -10,18 +10,18 @@ import (
 )
 
 type buffer struct {
-	q []interface{}
+	q []any
 }
 
-func (b *buffer) push(q ...interface{}) {
+func (b *buffer) push(q ...any) {
 	b.q = append(b.q, q...)
 }
 
-func (b *buffer) pushFront(q ...interface{}) {
+func (b *buffer) pushFront(q ...any) {
 	b.q = append(q, b.q...)
 }
 
-func (b *buffer) popFront() interface{} {
+func (b *buffer) popFront() any {
 	if b.empty() {
 		return nil
 	}
@@ -34,20 +34,20 @@ func (b *buffer) empty() bool {
 	return len(b.q) == 0
 }
 
-func (b *buffer) build() []interface{} {
+func (b *buffer) build() []any {
 	return b.q
 }
 
 type builder interface {
-	build() []interface{}
+	build() []any
 }
 
-func build(b *buffer) (string, []interface{}) {
-	var args []interface{}
+func build(b *buffer) (string, []any) {
+	var args []any
 	var i int
 
-	var f func(p []interface{}, sep string) string
-	f = func(p []interface{}, sep string) string {
+	var f func(p []any, sep string) string
+	f = func(p []any, sep string) string {
 		var q []string
 		for _, x := range p {
 			switch x := x.(type) {
@@ -83,7 +83,7 @@ func build(b *buffer) (string, []interface{}) {
 	return query, args
 }
 
-func convertToString(x interface{}, quoteStr bool) string {
+func convertToString(x any, quoteStr bool) string {
 	switch x := x.(type) {
 	default:
 		return fmt.Sprint(x)

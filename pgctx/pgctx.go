@@ -16,9 +16,9 @@ type DB interface {
 
 // Queryer interface
 type Queryer interface {
-	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
-	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
-	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
 	PrepareContext(context.Context, string) (*sql.Stmt, error)
 }
 
@@ -140,22 +140,22 @@ func q(ctx context.Context) Queryer {
 }
 
 // QueryRow calls db.QueryRowContext
-func QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func QueryRow(ctx context.Context, query string, args ...any) *sql.Row {
 	return q(ctx).QueryRowContext(ctx, query, args...)
 }
 
 // Query calls db.QueryContext
-func Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	return q(ctx).QueryContext(ctx, query, args...)
 }
 
 // Exec calls db.ExecContext
-func Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return q(ctx).ExecContext(ctx, query, args...)
 }
 
 // Iter calls pgsql.IterContext
-func Iter(ctx context.Context, iter pgsql.Iterator, query string, args ...interface{}) error {
+func Iter(ctx context.Context, iter pgsql.Iterator, query string, args ...any) error {
 	return pgsql.IterContext(ctx, q(ctx), iter, query, args...)
 }
 

@@ -29,7 +29,7 @@ func TestDelete(t *testing.T) {
 		q,
 	)
 	assert.EqualValues(t,
-		[]interface{}{"test", false, 20, 30},
+		[]any{"test", false, 20, 30},
 		args,
 	)
 }

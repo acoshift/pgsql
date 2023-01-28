@@ -9,7 +9,7 @@ import (
 	"github.com/acoshift/pgsql/pgstmt"
 )
 
-func Do(ctx context.Context, model interface{}, filter ...Filter) error {
+func Do(ctx context.Context, model any, filter ...Filter) error {
 	var err error
 	switch m := model.(type) {
 	case Selector:

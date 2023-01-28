@@ -17,7 +17,7 @@ type null[T comparable] struct {
 	value *T
 }
 
-func (s *null[T]) Scan(src interface{}) error {
+func (s *null[T]) Scan(src any) error {
 	*s.value = *(new(T))
 	if src == nil {
 		return nil

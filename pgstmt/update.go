@@ -22,8 +22,8 @@ type UpdateStatement interface {
 }
 
 type Set interface {
-	To(value ...interface{})
-	ToRaw(rawValue ...interface{})
+	To(value ...any)
+	ToRaw(rawValue ...any)
 	Select(f func(b SelectStatement))
 }
 
@@ -127,13 +127,13 @@ type set struct {
 	to  group
 }
 
-func (st *set) To(value ...interface{}) {
+func (st *set) To(value ...any) {
 	for _, v := range value {
 		st.to.push(Arg(v))
 	}
 }
 
-func (st *set) ToRaw(rawValue ...interface{}) {
+func (st *set) ToRaw(rawValue ...any) {
 	st.to.push(rawValue...)
 }
 
@@ -143,7 +143,7 @@ func (st *set) Select(f func(b SelectStatement)) {
 	st.to.push(paren(x.make()))
 }
 
-func (st *set) build() []interface{} {
+func (st *set) build() []any {
 	var b buffer
 	if len(st.col.q) > 1 {
 		b.push(paren(&st.col))

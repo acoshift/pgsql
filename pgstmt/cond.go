@@ -2,29 +2,29 @@ package pgstmt
 
 // Cond is the condition builder
 type Cond interface {
-	Op(field, op string, value interface{})
-	OpRaw(field, op string, rawValue interface{})
-	Eq(field string, value interface{})
-	EqRaw(field string, rawValue interface{})
-	Ne(field string, value interface{})
-	NeRaw(field string, rawValue interface{})
-	Lt(field string, value interface{})
-	LtRaw(field string, rawValue interface{})
-	Le(field string, value interface{})
-	LeRaw(field string, rawValue interface{})
-	Gt(field string, value interface{})
-	GtRaw(field string, rawValue interface{})
-	Ge(field string, value interface{})
-	GeRaw(field string, rawValue interface{})
-	Like(field string, value interface{})
-	LikeRaw(field string, rawValue interface{})
-	ILike(field string, value interface{})
-	ILikeRaw(field string, rawValue interface{})
-	In(field string, value ...interface{})
-	InRaw(field string, value ...interface{})
+	Op(field, op string, value any)
+	OpRaw(field, op string, rawValue any)
+	Eq(field string, value any)
+	EqRaw(field string, rawValue any)
+	Ne(field string, value any)
+	NeRaw(field string, rawValue any)
+	Lt(field string, value any)
+	LtRaw(field string, rawValue any)
+	Le(field string, value any)
+	LeRaw(field string, rawValue any)
+	Gt(field string, value any)
+	GtRaw(field string, rawValue any)
+	Ge(field string, value any)
+	GeRaw(field string, rawValue any)
+	Like(field string, value any)
+	LikeRaw(field string, rawValue any)
+	ILike(field string, value any)
+	ILikeRaw(field string, rawValue any)
+	In(field string, value ...any)
+	InRaw(field string, value ...any)
 	InSelect(field string, f func(b SelectStatement))
-	NotIn(field string, value ...interface{})
-	NotInRaw(field string, value ...interface{})
+	NotIn(field string, value ...any)
+	NotInRaw(field string, value ...any)
 	IsNull(field string)
 	IsNotNull(field string)
 	Raw(sql string)
@@ -44,85 +44,85 @@ type cond struct {
 	nested bool
 }
 
-func (st *cond) Op(field, op string, value interface{}) {
+func (st *cond) Op(field, op string, value any) {
 	var x group
 	x.sep = " "
 	x.push(field, op, Arg(value))
 	st.ops.push(&x)
 }
 
-func (st *cond) OpRaw(field, op string, rawValue interface{}) {
+func (st *cond) OpRaw(field, op string, rawValue any) {
 	var x group
 	x.sep = " "
 	x.push(field, op, Raw(rawValue))
 	st.ops.push(&x)
 }
 
-func (st *cond) Eq(field string, value interface{}) {
+func (st *cond) Eq(field string, value any) {
 	st.Op(field, "=", value)
 }
 
-func (st *cond) EqRaw(field string, rawValue interface{}) {
+func (st *cond) EqRaw(field string, rawValue any) {
 	st.OpRaw(field, "=", rawValue)
 }
 
-func (st *cond) Ne(field string, value interface{}) {
+func (st *cond) Ne(field string, value any) {
 	st.Op(field, "!=", value)
 }
 
-func (st *cond) NeRaw(field string, rawValue interface{}) {
+func (st *cond) NeRaw(field string, rawValue any) {
 	st.OpRaw(field, "!=", rawValue)
 }
 
-func (st *cond) Lt(field string, value interface{}) {
+func (st *cond) Lt(field string, value any) {
 	st.Op(field, "<", value)
 }
 
-func (st *cond) LtRaw(field string, rawValue interface{}) {
+func (st *cond) LtRaw(field string, rawValue any) {
 	st.OpRaw(field, "<", rawValue)
 }
 
-func (st *cond) Le(field string, value interface{}) {
+func (st *cond) Le(field string, value any) {
 	st.Op(field, "<=", value)
 }
 
-func (st *cond) LeRaw(field string, rawValue interface{}) {
+func (st *cond) LeRaw(field string, rawValue any) {
 	st.OpRaw(field, "<=", rawValue)
 }
 
-func (st *cond) Gt(field string, value interface{}) {
+func (st *cond) Gt(field string, value any) {
 	st.Op(field, ">", value)
 }
 
-func (st *cond) GtRaw(field string, rawValue interface{}) {
+func (st *cond) GtRaw(field string, rawValue any) {
 	st.OpRaw(field, ">", rawValue)
 }
 
-func (st *cond) Ge(field string, value interface{}) {
+func (st *cond) Ge(field string, value any) {
 	st.Op(field, ">=", value)
 }
 
-func (st *cond) GeRaw(field string, rawValue interface{}) {
+func (st *cond) GeRaw(field string, rawValue any) {
 	st.OpRaw(field, ">=", rawValue)
 }
 
-func (st *cond) Like(field string, value interface{}) {
+func (st *cond) Like(field string, value any) {
 	st.Op(field, "like", value)
 }
 
-func (st *cond) LikeRaw(field string, rawValue interface{}) {
+func (st *cond) LikeRaw(field string, rawValue any) {
 	st.OpRaw(field, "like", rawValue)
 }
 
-func (st *cond) ILike(field string, value interface{}) {
+func (st *cond) ILike(field string, value any) {
 	st.Op(field, "ilike", value)
 }
 
-func (st *cond) ILikeRaw(field string, rawValue interface{}) {
+func (st *cond) ILikeRaw(field string, rawValue any) {
 	st.OpRaw(field, "ilike", rawValue)
 }
 
-func (st *cond) In(field string, value ...interface{}) {
+func (st *cond) In(field string, value ...any) {
 	var p group
 	for _, v := range value {
 		p.push(Arg(v))
@@ -134,7 +134,7 @@ func (st *cond) In(field string, value ...interface{}) {
 	st.ops.push(&x)
 }
 
-func (st *cond) InRaw(field string, value ...interface{}) {
+func (st *cond) InRaw(field string, value ...any) {
 	var p group
 	p.push(value...)
 
@@ -154,7 +154,7 @@ func (st *cond) InSelect(field string, f func(b SelectStatement)) {
 	st.ops.push(&p)
 }
 
-func (st *cond) NotIn(field string, value ...interface{}) {
+func (st *cond) NotIn(field string, value ...any) {
 	var p group
 	for _, v := range value {
 		p.push(Arg(v))
@@ -166,7 +166,7 @@ func (st *cond) NotIn(field string, value ...interface{}) {
 	st.ops.push(&x)
 }
 
-func (st *cond) NotInRaw(field string, value ...interface{}) {
+func (st *cond) NotInRaw(field string, value ...any) {
 	var p group
 	p.push(value...)
 
@@ -220,7 +220,7 @@ func (st *cond) empty() bool {
 	return st.ops.empty() && st.chain.empty()
 }
 
-func (st *cond) build() []interface{} {
+func (st *cond) build() []any {
 	if st.empty() {
 		return nil
 	}
@@ -232,7 +232,7 @@ func (st *cond) build() []interface{} {
 			var b parenGroup
 			b.sep = " "
 			b.push(st.chain.q...)
-			return []interface{}{&b}
+			return []any{&b}
 		}
 
 		return st.chain.q
@@ -247,7 +247,7 @@ func (st *cond) build() []interface{} {
 		b.sep = " "
 		b.push(&st.ops)
 		b.push(st.chain.q...)
-		return []interface{}{&b}
+		return []any{&b}
 	}
 
 	var b buffer

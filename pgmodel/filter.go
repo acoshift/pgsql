@@ -22,7 +22,7 @@ type FilterFunc func(ctx context.Context, b Cond) error
 
 func (f FilterFunc) Apply(ctx context.Context, b Cond) error { return f(ctx, b) }
 
-func Equal(field string, value interface{}) Filter {
+func Equal(field string, value any) Filter {
 	return Where(func(b pgstmt.Cond) {
 		b.Eq(field, value)
 	})
