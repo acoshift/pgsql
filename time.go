@@ -30,21 +30,5 @@ func NullTime(t *time.Time) interface {
 	driver.Valuer
 	sql.Scanner
 } {
-	return &nullTime{t}
-}
-
-type nullTime struct {
-	*time.Time
-}
-
-func (t *nullTime) Scan(src interface{}) error {
-	*t.Time, _ = src.(time.Time)
-	return nil
-}
-
-func (t nullTime) Value() (driver.Value, error) {
-	if t.Time == nil || t.Time.IsZero() {
-		return nil, nil
-	}
-	return *t.Time, nil
+	return Null(t)
 }
