@@ -88,7 +88,7 @@ func TestSelect(t *testing.T) {
 											from messages m
 											where (m.id = p.id)
 											order by created_at desc nulls first
-											limit 1
+											as limit 1
 											offset 2) msg
 					  from profile p
 					  left join noti n on (n.id = p.id and n.user_id = $1)) t
@@ -447,7 +447,7 @@ func TestSelect(t *testing.T) {
 			}),
 			`
 				select m.name
-				from manufacturers m left join lateral (select get_product_names(m.id) pname) t on (true)
+				from manufacturers m left join lateral (select get_product_names(m.id) as pname) t on (true)
 				where (pname is null)
 			`,
 			nil,
@@ -482,6 +482,25 @@ func TestSelect(t *testing.T) {
 				) t using (id)
 			`,
 			nil,
+		},
+		{
+			"select where not",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("*")
+				b.From("table1")
+				b.Where(func(b pgstmt.Cond) {
+					b.Eq("id", 1)
+					b.Not(func(b pgstmt.Cond) {
+						b.Op("tags", "@>", pq.Array([]string{"a", "b"}))
+					})
+				})
+			}),
+			`
+				select *
+				from table1
+				where (id = $1 and (not (tags @> $2)))
+			`,
+			[]any{1, pq.Array([]string{"a", "b"})},
 		},
 	}
 
