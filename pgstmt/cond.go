@@ -28,6 +28,7 @@ type Cond interface {
 	IsNull(field string)
 	IsNotNull(field string)
 	Raw(sql string)
+	Not(f func(b Cond))
 	And(f func(b Cond))
 	Or(f func(b Cond))
 	Mode() CondMode
@@ -186,6 +187,17 @@ func (st *cond) IsNotNull(field string) {
 
 func (st *cond) Raw(sql string) {
 	st.ops.push(sql)
+}
+
+func (st *cond) Not(b func(b Cond)) {
+	var x cond
+	x.ops.sep = " and "
+	x.nested = true
+	b(&x)
+
+	if !x.empty() {
+		st.ops.push(withParen(" ", "not", &x))
+	}
 }
 
 func (st *cond) And(f func(b Cond)) {

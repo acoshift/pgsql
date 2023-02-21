@@ -483,6 +483,25 @@ func TestSelect(t *testing.T) {
 			`,
 			nil,
 		},
+		{
+			"select where not",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("*")
+				b.From("table1")
+				b.Where(func(b pgstmt.Cond) {
+					b.Eq("id", 1)
+					b.Not(func(b pgstmt.Cond) {
+						b.Op("tags", "@>", pq.Array([]string{"a", "b"}))
+					})
+				})
+			}),
+			`
+				select *
+				from table1
+				where (id = $1 and (not (tags @> $2)))
+			`,
+			[]any{1, pq.Array([]string{"a", "b"})},
+		},
 	}
 
 	for _, tC := range cases {
