@@ -1,11 +1,11 @@
 module github.com/acoshift/pgsql
 
-go 1.19
+go 1.20
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/lib/pq v1.10.7
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 )
 
 require (
