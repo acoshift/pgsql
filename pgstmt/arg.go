@@ -33,7 +33,12 @@ type notArg struct {
 
 // Raw marks value as raw sql without escape
 func Raw(v any) any {
-	return raw{v}
+	switch v := v.(type) {
+	default:
+		return raw{v}
+	case _any:
+		return Any(raw{v.value})
+	}
 }
 
 type raw struct {

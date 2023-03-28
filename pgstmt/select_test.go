@@ -502,6 +502,27 @@ func TestSelect(t *testing.T) {
 			`,
 			[]any{1, pq.Array([]string{"a", "b"})},
 		},
+		{
+			"select cond eq",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("*")
+				b.From("table1")
+				b.Where(func(b pgstmt.Cond) {
+					b.Field("id").Eq().To(1)
+					b.Field("name").Eq().Field("old_name")
+					b.Value(2).Eq().Field(pgstmt.Any("path"))
+					b.Field("t2").In().Select(func(b pgstmt.SelectStatement) {
+						b.Columns(1)
+					})
+				})
+			}),
+			`
+				select *
+				from table1
+				where (id = $1 and name = old_name and $2 = any(path) and t2 in (select 1))
+			`,
+			[]any{1, 2},
+		},
 	}
 
 	for _, tC := range cases {

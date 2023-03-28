@@ -60,13 +60,23 @@ func build(b *buffer) (string, []any) {
 				q = append(q, "$"+strconv.Itoa(i))
 				args = append(args, x.value)
 			case _any:
-				i++
-				q = append(q, fmt.Sprintf("any($%d)", i))
-				args = append(args, x.value)
+				switch x := x.value.(type) {
+				case raw, notArg:
+					q = append(q, fmt.Sprintf("any(%s)", convertToString(x, false)))
+				default:
+					i++
+					q = append(q, fmt.Sprintf("any($%d)", i))
+					args = append(args, x)
+				}
 			case all:
-				i++
-				q = append(q, fmt.Sprintf("all($%d)", i))
-				args = append(args, x.value)
+				switch x := x.value.(type) {
+				case raw, notArg:
+					q = append(q, fmt.Sprintf("all(%s)", convertToString(x, false)))
+				default:
+					i++
+					q = append(q, fmt.Sprintf("all($%d)", i))
+					args = append(args, x)
+				}
 			case *group:
 				if !x.empty() {
 					q = append(q, f(x.q, x.getSep()))
