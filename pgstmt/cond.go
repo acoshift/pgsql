@@ -2,31 +2,31 @@ package pgstmt
 
 // Cond is the condition builder
 type Cond interface {
-	Op(field, op string, value any)
-	OpRaw(field, op string, rawValue any)
-	Eq(field string, value any)
-	EqRaw(field string, rawValue any)
-	Ne(field string, value any)
-	NeRaw(field string, rawValue any)
-	Lt(field string, value any)
-	LtRaw(field string, rawValue any)
-	Le(field string, value any)
-	LeRaw(field string, rawValue any)
-	Gt(field string, value any)
-	GtRaw(field string, rawValue any)
-	Ge(field string, value any)
-	GeRaw(field string, rawValue any)
-	Like(field string, value any)
-	LikeRaw(field string, rawValue any)
-	ILike(field string, value any)
-	ILikeRaw(field string, rawValue any)
-	In(field string, value ...any)
-	InRaw(field string, value ...any)
-	InSelect(field string, f func(b SelectStatement))
-	NotIn(field string, value ...any)
-	NotInRaw(field string, value ...any)
-	IsNull(field string)
-	IsNotNull(field string)
+	Op(field any, op string, value any)
+	OpRaw(field any, op string, rawValue any)
+	Eq(field, value any)
+	EqRaw(field, rawValue any)
+	Ne(field, value any)
+	NeRaw(field, rawValue any)
+	Lt(field, value any)
+	LtRaw(field, rawValue any)
+	Le(field, value any)
+	LeRaw(field, rawValue any)
+	Gt(field, value any)
+	GtRaw(field, rawValue any)
+	Ge(field, value any)
+	GeRaw(field, rawValue any)
+	Like(field, value any)
+	LikeRaw(field, rawValue any)
+	ILike(field, value any)
+	ILikeRaw(field, rawValue any)
+	In(field any, value ...any)
+	InRaw(field any, value ...any)
+	InSelect(field any, f func(b SelectStatement))
+	NotIn(field any, value ...any)
+	NotInRaw(field any, value ...any)
+	IsNull(field any)
+	IsNotNull(field any)
 
 	Field(field any) CondOp
 	Value(value any) CondOp
@@ -79,85 +79,85 @@ type cond struct {
 	nested bool
 }
 
-func (st *cond) Op(field, op string, value any) {
+func (st *cond) Op(field any, op string, value any) {
 	var x group
 	x.sep = " "
 	x.push(field, op, Arg(value))
 	st.ops.push(&x)
 }
 
-func (st *cond) OpRaw(field, op string, rawValue any) {
+func (st *cond) OpRaw(field any, op string, rawValue any) {
 	var x group
 	x.sep = " "
 	x.push(field, op, Raw(rawValue))
 	st.ops.push(&x)
 }
 
-func (st *cond) Eq(field string, value any) {
+func (st *cond) Eq(field, value any) {
 	st.Op(field, "=", value)
 }
 
-func (st *cond) EqRaw(field string, rawValue any) {
+func (st *cond) EqRaw(field, rawValue any) {
 	st.OpRaw(field, "=", rawValue)
 }
 
-func (st *cond) Ne(field string, value any) {
+func (st *cond) Ne(field, value any) {
 	st.Op(field, "!=", value)
 }
 
-func (st *cond) NeRaw(field string, rawValue any) {
+func (st *cond) NeRaw(field, rawValue any) {
 	st.OpRaw(field, "!=", rawValue)
 }
 
-func (st *cond) Lt(field string, value any) {
+func (st *cond) Lt(field, value any) {
 	st.Op(field, "<", value)
 }
 
-func (st *cond) LtRaw(field string, rawValue any) {
+func (st *cond) LtRaw(field, rawValue any) {
 	st.OpRaw(field, "<", rawValue)
 }
 
-func (st *cond) Le(field string, value any) {
+func (st *cond) Le(field, value any) {
 	st.Op(field, "<=", value)
 }
 
-func (st *cond) LeRaw(field string, rawValue any) {
+func (st *cond) LeRaw(field, rawValue any) {
 	st.OpRaw(field, "<=", rawValue)
 }
 
-func (st *cond) Gt(field string, value any) {
+func (st *cond) Gt(field, value any) {
 	st.Op(field, ">", value)
 }
 
-func (st *cond) GtRaw(field string, rawValue any) {
+func (st *cond) GtRaw(field, rawValue any) {
 	st.OpRaw(field, ">", rawValue)
 }
 
-func (st *cond) Ge(field string, value any) {
+func (st *cond) Ge(field, value any) {
 	st.Op(field, ">=", value)
 }
 
-func (st *cond) GeRaw(field string, rawValue any) {
+func (st *cond) GeRaw(field, rawValue any) {
 	st.OpRaw(field, ">=", rawValue)
 }
 
-func (st *cond) Like(field string, value any) {
+func (st *cond) Like(field, value any) {
 	st.Op(field, "like", value)
 }
 
-func (st *cond) LikeRaw(field string, rawValue any) {
+func (st *cond) LikeRaw(field, rawValue any) {
 	st.OpRaw(field, "like", rawValue)
 }
 
-func (st *cond) ILike(field string, value any) {
+func (st *cond) ILike(field, value any) {
 	st.Op(field, "ilike", value)
 }
 
-func (st *cond) ILikeRaw(field string, rawValue any) {
+func (st *cond) ILikeRaw(field, rawValue any) {
 	st.OpRaw(field, "ilike", rawValue)
 }
 
-func (st *cond) In(field string, value ...any) {
+func (st *cond) In(field any, value ...any) {
 	var p group
 	for _, v := range value {
 		p.push(Arg(v))
@@ -169,7 +169,7 @@ func (st *cond) In(field string, value ...any) {
 	st.ops.push(&x)
 }
 
-func (st *cond) InRaw(field string, value ...any) {
+func (st *cond) InRaw(field any, value ...any) {
 	var p group
 	p.push(value...)
 
@@ -179,7 +179,7 @@ func (st *cond) InRaw(field string, value ...any) {
 	st.ops.push(&x)
 }
 
-func (st *cond) InSelect(field string, f func(b SelectStatement)) {
+func (st *cond) InSelect(field any, f func(b SelectStatement)) {
 	var x selectStmt
 	f(&x)
 
@@ -189,7 +189,7 @@ func (st *cond) InSelect(field string, f func(b SelectStatement)) {
 	st.ops.push(&p)
 }
 
-func (st *cond) NotIn(field string, value ...any) {
+func (st *cond) NotIn(field any, value ...any) {
 	var p group
 	for _, v := range value {
 		p.push(Arg(v))
@@ -201,7 +201,7 @@ func (st *cond) NotIn(field string, value ...any) {
 	st.ops.push(&x)
 }
 
-func (st *cond) NotInRaw(field string, value ...any) {
+func (st *cond) NotInRaw(field any, value ...any) {
 	var p group
 	p.push(value...)
 
@@ -211,12 +211,18 @@ func (st *cond) NotInRaw(field string, value ...any) {
 	st.ops.push(&x)
 }
 
-func (st *cond) IsNull(field string) {
-	st.ops.push(field + " is null")
+func (st *cond) IsNull(field any) {
+	var x group
+	x.sep = " "
+	x.push(field, "is null")
+	st.ops.push(&x)
 }
 
-func (st *cond) IsNotNull(field string) {
-	st.ops.push(field + " is not null")
+func (st *cond) IsNotNull(field any) {
+	var x group
+	x.sep = " "
+	x.push(field, "is not null")
+	st.ops.push(&x)
 }
 
 func (st *cond) Field(field any) CondOp {

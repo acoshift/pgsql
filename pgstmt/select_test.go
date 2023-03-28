@@ -530,6 +530,22 @@ func TestSelect(t *testing.T) {
 			`,
 			[]any{1, 2, 3, 4},
 		},
+		{
+			"select where any",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("*")
+				b.From("table1")
+				b.Where(func(b pgstmt.Cond) {
+					b.Eq(pgstmt.Arg(1), pgstmt.Any(pgstmt.Raw("path")))
+				})
+			}),
+			`
+				select *
+				from table1
+				where ($1 = any(path))
+			`,
+			[]any{1},
+		},
 	}
 
 	for _, tC := range cases {
