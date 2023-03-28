@@ -62,13 +62,13 @@ type CondOp interface {
 
 type CondValue interface {
 	To(value any)
-	ToRaw(rawValue any)
+	Raw(rawValue any)
 	Field(field any)
 }
 
 type CondValues interface {
 	To(values ...any)
-	ToRaw(rawValues ...any)
+	Raw(rawValues ...any)
 	Field(field any)
 	Select(f func(b SelectStatement))
 }
@@ -426,7 +426,7 @@ func (v *condValue) To(value any) {
 	v.value = Arg(value)
 }
 
-func (v *condValue) ToRaw(rawValue any) {
+func (v *condValue) Raw(rawValue any) {
 	v.value = Raw(rawValue)
 }
 
@@ -446,7 +446,7 @@ func (v *condValues) To(value ...any) {
 	v.b.push(paren(&p))
 }
 
-func (v *condValues) ToRaw(rawValue ...any) {
+func (v *condValues) Raw(rawValue ...any) {
 	var p group
 	p.push(rawValue...)
 	v.b.push(paren(&p))
