@@ -515,6 +515,7 @@ func TestSelect(t *testing.T) {
 					b.Field("t2").In().Select(func(b pgstmt.SelectStatement) {
 						b.Columns(1)
 					})
+					b.Field("deleted_at").IsNull()
 				})
 			}),
 			`
@@ -524,7 +525,8 @@ func TestSelect(t *testing.T) {
 				   and name = old_name
 				   and $2 = any(path)
 				   and t1 in ($3, $4)
-				   and t2 in (select 1))
+				   and t2 in (select 1)
+				   and deleted_at is null)
 			`,
 			[]any{1, 2, 3, 4},
 		},
