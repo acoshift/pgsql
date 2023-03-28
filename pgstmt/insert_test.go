@@ -17,7 +17,7 @@ func TestInsert(t *testing.T) {
 			b.Columns("username", "name", "created_at")
 			b.Value("tester1", "Tester 1", pgstmt.Default)
 			b.Value("tester2", "Tester 2", "now()")
-			b.OnConflict("username").DoNothing()
+			b.OnConflictIndex("username").DoNothing()
 			b.Returning("id", "name")
 		}).SQL()
 
@@ -58,7 +58,7 @@ func TestInsert(t *testing.T) {
 			b.Into("users")
 			b.Columns("username", "email")
 			b.Value("tester1", "tester1@localhost")
-			b.OnConflict("username").DoUpdate(func(b pgstmt.UpdateStatement) {
+			b.OnConflictIndex("username").DoUpdate(func(b pgstmt.UpdateStatement) {
 				b.Set("email").ToRaw("excluded.email")
 				b.Set("updated_at").ToRaw("now()")
 			})

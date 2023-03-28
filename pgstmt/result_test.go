@@ -44,11 +44,11 @@ func TestResult_QueryAllWith(t *testing.T) {
 	})
 
 	assert.NoError(t, err)
-
-	assert.Len(t, vs, 3)
-	assert.EqualValues(t, []*v{
-		{1, 2},
-		{3, 4},
-		{5, 6},
-	}, vs)
+	if assert.Len(t, vs, 3) {
+		assert.EqualValues(t, []*v{
+			{1, 2},
+			{3, 4},
+			{5, 6},
+		}, vs)
+	}
 }
