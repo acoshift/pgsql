@@ -34,6 +34,27 @@ func TestInsert(t *testing.T) {
 		)
 	})
 
+	t.Run("insert on conflict do nothing", func(t *testing.T) {
+		q, args := pgstmt.Insert(func(b pgstmt.InsertStatement) {
+			b.Into("users")
+			b.Columns("username", "name")
+			b.Value("tester1", "Tester 1")
+			b.OnConflictDoNothing()
+			b.Returning("id")
+		}).SQL()
+
+		assert.Equal(t,
+			"insert into users (username, name) values ($1, $2) on conflict do nothing returning id",
+			q,
+		)
+		assert.EqualValues(t,
+			[]any{
+				"tester1", "Tester 1",
+			},
+			args,
+		)
+	})
+
 	t.Run("insert select", func(t *testing.T) {
 		q, args := pgstmt.Insert(func(b pgstmt.InsertStatement) {
 			b.Into("films")
