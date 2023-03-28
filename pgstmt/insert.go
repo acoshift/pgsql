@@ -17,12 +17,31 @@ type InsertStatement interface {
 	Value(value ...any)
 	Values(values ...any)
 	Select(f func(b SelectStatement))
-	OnConflict(target ...string) OnConflict
-	OnConflictOnConstraint(constraintName string) OnConflict
+
+	OnConflict(f func(b ConflictTarget)) ConflictAction
+
+	// OnConflictIndex is the shortcut for
+	// OnConflict(func(b ConflictTarget) {
+	//		b.Index(target...)
+	// })
+	OnConflictIndex(target ...string) ConflictAction
+
+	// OnConflictOnConstraint is the shortcut for
+	// OnConflict(func(b ConflictTarget) {
+	//		b.OnConstraint(constraintName)
+	// })
+	OnConflictOnConstraint(constraintName string) ConflictAction
+
 	Returning(col ...string)
 }
 
-type OnConflict interface {
+type ConflictTarget interface {
+	Index(target ...string)
+	Where(f func(b Cond))
+	OnConstraint(constraintName string)
+}
+
+type ConflictAction interface {
 	DoNothing()
 	DoUpdate(f func(b UpdateStatement))
 }
@@ -78,14 +97,23 @@ func (st *insertStmt) Select(f func(b SelectStatement)) {
 	st.selects = &x
 }
 
-func (st *insertStmt) OnConflict(target ...string) OnConflict {
-	st.conflict = &conflict{targets: target}
-	return st.conflict
+func (st *insertStmt) OnConflict(f func(b ConflictTarget)) ConflictAction {
+	var x conflict
+	f(&x)
+	st.conflict = &x
+	return &st.conflict.action
 }
 
-func (st *insertStmt) OnConflictOnConstraint(constraintName string) OnConflict {
-	st.conflict = &conflict{constraint: constraintName}
-	return st.conflict
+func (st *insertStmt) OnConflictIndex(target ...string) ConflictAction {
+	return st.OnConflict(func(b ConflictTarget) {
+		b.Index(target...)
+	})
+}
+
+func (st *insertStmt) OnConflictOnConstraint(constraintName string) ConflictAction {
+	return st.OnConflict(func(b ConflictTarget) {
+		b.OnConstraint(constraintName)
+	})
 }
 
 func (st *insertStmt) Returning(col ...string) {
@@ -114,23 +142,7 @@ func (st *insertStmt) make() *buffer {
 		b.push(st.selects.make())
 	}
 	if st.conflict != nil {
-		b.push("on conflict")
-
-		// on conflict can be one of
-		// => ( { index_column_name | ( index_expression ) } [ COLLATE collation ] [ opclass ] [, ...] ) [ WHERE index_predicate ]
-		// => ON CONSTRAINT constraint_name
-		if len(st.conflict.targets) > 0 {
-			b.push(parenString(st.conflict.targets...))
-		} else if st.conflict.constraint != "" {
-			b.push("on constraint")
-			b.push(st.conflict.constraint)
-		}
-		if st.conflict.doNothing {
-			b.push("do nothing")
-		}
-		if st.conflict.doUpdate != nil {
-			b.push("do", st.conflict.doUpdate.make())
-		}
+		b.push(st.conflict.make())
 	}
 	if !st.returning.empty() {
 		b.push("returning", &st.returning)
@@ -141,16 +153,68 @@ func (st *insertStmt) make() *buffer {
 
 type conflict struct {
 	targets    []string
+	where      cond
 	constraint string
-	doNothing  bool
-	doUpdate   *updateStmt
+	action     conflictAction
 }
 
-func (st *conflict) DoNothing() {
+func (st *conflict) make() *buffer {
+	// on conflict can be one of
+	// => ( { index_column_name | ( index_expression ) } [ COLLATE collation ] [ opclass ] [, ...] ) [ WHERE index_predicate ]
+	// => ON CONSTRAINT constraint_name
+
+	var b buffer
+
+	b.push("on conflict")
+
+	if len(st.targets) > 0 {
+		b.push(parenString(st.targets...))
+
+		if !st.where.empty() {
+			b.push("where", &st.where)
+		}
+	} else if st.constraint != "" {
+		b.push("on constraint", st.constraint)
+	}
+
+	b.push(st.action.make())
+
+	return &b
+}
+
+func (st *conflict) Index(target ...string) {
+	st.targets = append(st.targets, target...)
+}
+
+func (st *conflict) Where(f func(b Cond)) {
+	f(&st.where)
+}
+
+func (st *conflict) OnConstraint(constraintName string) {
+	st.constraint = constraintName
+}
+
+type conflictAction struct {
+	doNothing bool
+	doUpdate  *updateStmt
+}
+
+func (st *conflictAction) make() *buffer {
+	var b buffer
+	if st.doNothing {
+		b.push("do nothing")
+	}
+	if st.doUpdate != nil {
+		b.push("do", st.doUpdate.make())
+	}
+	return &b
+}
+
+func (st *conflictAction) DoNothing() {
 	st.doNothing = true
 }
 
-func (st *conflict) DoUpdate(f func(b UpdateStatement)) {
+func (st *conflictAction) DoUpdate(f func(b UpdateStatement)) {
 	var x updateStmt
 	f(&x)
 	st.doUpdate = &x
