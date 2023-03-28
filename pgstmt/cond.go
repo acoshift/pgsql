@@ -27,6 +27,10 @@ type Cond interface {
 	NotInRaw(field string, value ...any)
 	IsNull(field string)
 	IsNotNull(field string)
+
+	Field(field any) CondOp
+	Value(value any) CondOp
+
 	Raw(sql string)
 	Not(f func(b Cond))
 	And(f func(b Cond))
@@ -37,6 +41,36 @@ type Cond interface {
 type CondMode interface {
 	And()
 	Or()
+}
+
+type CondOp interface {
+	Op(op string) CondValue
+	OpValues(op string) CondValues
+	Eq() CondValue
+	Ne() CondValue
+	Lt() CondValue
+	Le() CondValue
+	Gt() CondValue
+	Ge() CondValue
+	Like() CondValue
+	ILike() CondValue
+	In() CondValues
+	NotIn() CondValues
+	IsNull()
+	IsNotNull()
+}
+
+type CondValue interface {
+	Value(value any)
+	Raw(rawValue any)
+	Field(field any)
+}
+
+type CondValues interface {
+	Value(values ...any)
+	Raw(rawValues ...any)
+	Field(field any)
+	Select(f func(b SelectStatement))
 }
 
 type cond struct {
@@ -185,6 +219,20 @@ func (st *cond) IsNotNull(field string) {
 	st.ops.push(field + " is not null")
 }
 
+func (st *cond) Field(field any) CondOp {
+	var x condOp
+	x.field = field
+	st.ops.push(&x)
+	return &x
+}
+
+func (st *cond) Value(value any) CondOp {
+	var x condOp
+	x.field = Arg(value)
+	st.ops.push(&x)
+	return &x
+}
+
 func (st *cond) Raw(sql string) {
 	st.ops.push(sql)
 }
@@ -278,4 +326,139 @@ func (mode *condMode) And() {
 
 func (mode *condMode) Or() {
 	mode.cond.ops.sep = " or "
+}
+
+type condOp struct {
+	field  any
+	op     string
+	value  *condValue
+	values *condValues
+}
+
+func (op *condOp) build() []any {
+	var b buffer
+
+	var x group
+	x.sep = " "
+	x.push(op.field, op.op)
+	if op.value != nil {
+		x.push(op.value.value)
+	} else if op.values != nil {
+		x.push(&op.values.b)
+	}
+
+	b.push(&x)
+
+	return b.build()
+}
+
+func (op *condOp) Op(s string) CondValue {
+	op.op = s
+	op.value = &condValue{}
+	return op.value
+}
+
+func (op *condOp) OpValues(s string) CondValues {
+	op.op = s
+	op.values = &condValues{}
+	return op.values
+}
+
+func (op *condOp) Eq() CondValue {
+	return op.Op("=")
+}
+
+func (op *condOp) Ne() CondValue {
+	return op.Op("!=")
+}
+
+func (op *condOp) Lt() CondValue {
+	return op.Op("<")
+}
+
+func (op *condOp) Le() CondValue {
+	return op.Op("<=")
+}
+
+func (op *condOp) Gt() CondValue {
+	return op.Op(">")
+}
+
+func (op *condOp) Ge() CondValue {
+	return op.Op(">=")
+}
+
+func (op *condOp) Like() CondValue {
+	return op.Op("like")
+}
+
+func (op *condOp) ILike() CondValue {
+	return op.Op("ilike")
+}
+
+func (op *condOp) In() CondValues {
+	return op.OpValues("in")
+}
+
+func (op *condOp) NotIn() CondValues {
+	return op.OpValues("not in")
+}
+
+func (op *condOp) IsNull() {
+	op.op = "is null"
+}
+
+func (op *condOp) IsNotNull() {
+	op.op = "is not null"
+}
+
+type condValue struct {
+	value any
+}
+
+func (v *condValue) make() *buffer {
+	var b buffer
+	b.push(v.value)
+	return &b
+}
+
+func (v *condValue) Value(value any) {
+	v.value = Arg(value)
+}
+
+func (v *condValue) Raw(rawValue any) {
+	v.value = Raw(rawValue)
+}
+
+func (v *condValue) Field(field any) {
+	v.value = Raw(field)
+}
+
+type condValues struct {
+	b buffer
+}
+
+func (v *condValues) Value(value ...any) {
+	var p group
+	for _, x := range value {
+		p.push(Arg(x))
+	}
+	v.b.push(paren(&p))
+}
+
+func (v *condValues) Raw(rawValue ...any) {
+	var p group
+	p.push(rawValue...)
+	v.b.push(paren(&p))
+}
+
+func (v *condValues) Field(field any) {
+	v.b.push(Raw(field))
+}
+
+func (v *condValues) Select(f func(b SelectStatement)) {
+	var x selectStmt
+	f(&x)
+
+	v.b.push(paren(x.make()))
 }
