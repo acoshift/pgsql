@@ -20,6 +20,10 @@ type InsertStatement interface {
 
 	OnConflict(f func(b ConflictTarget)) ConflictAction
 
+	// OnConflictDoNothing is the shortcut for
+	// OnConflict(func(b ConflictTarget) {}).DoNothing()
+	OnConflictDoNothing()
+
 	// OnConflictIndex is the shortcut for
 	// OnConflict(func(b ConflictTarget) {
 	//		b.Index(target...)
@@ -102,6 +106,14 @@ func (st *insertStmt) OnConflict(f func(b ConflictTarget)) ConflictAction {
 	f(&x)
 	st.conflict = &x
 	return &st.conflict.action
+}
+
+func (st *insertStmt) OnConflictDoNothing() {
+	st.conflict = &conflict{
+		action: conflictAction{
+			doNothing: true,
+		},
+	}
 }
 
 func (st *insertStmt) OnConflictIndex(target ...string) ConflictAction {
