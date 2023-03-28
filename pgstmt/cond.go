@@ -61,13 +61,13 @@ type CondOp interface {
 }
 
 type CondValue interface {
-	To(value any)
+	Value(value any)
 	Raw(rawValue any)
 	Field(field any)
 }
 
 type CondValues interface {
-	To(values ...any)
+	Value(values ...any)
 	Raw(rawValues ...any)
 	Field(field any)
 	Select(f func(b SelectStatement))
@@ -422,7 +422,7 @@ func (v *condValue) make() *buffer {
 	return &b
 }
 
-func (v *condValue) To(value any) {
+func (v *condValue) Value(value any) {
 	v.value = Arg(value)
 }
 
@@ -438,7 +438,7 @@ type condValues struct {
 	b buffer
 }
 
-func (v *condValues) To(value ...any) {
+func (v *condValues) Value(value ...any) {
 	var p group
 	for _, x := range value {
 		p.push(Arg(x))

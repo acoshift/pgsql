@@ -508,7 +508,7 @@ func TestSelect(t *testing.T) {
 				b.Columns("*")
 				b.From("table1")
 				b.Where(func(b pgstmt.Cond) {
-					b.Field("id").Eq().To(1)
+					b.Field("id").Eq().Value(1)
 					b.Field("name").Eq().Field("old_name")
 					b.Value(2).Eq().Field(pgstmt.Any("path"))
 					b.Field("t2").In().Select(func(b pgstmt.SelectStatement) {
