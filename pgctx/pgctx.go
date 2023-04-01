@@ -104,6 +104,13 @@ func RunInTx(ctx context.Context, f func(ctx context.Context) error) error {
 	return RunInTxOptions(ctx, nil, f)
 }
 
+// RunInReadOnlyTx calls RunInTxOptions with read only options
+func RunInReadOnlyTx(ctx context.Context, f func(ctx context.Context) error) error {
+	var opts pgsql.TxOptions
+	opts.TxOptions.ReadOnly = true
+	return RunInTxOptions(ctx, &opts, f)
+}
+
 // IsInTx checks is context inside RunInTx
 func IsInTx(ctx context.Context) bool {
 	_, ok := ctx.Value(ctxKeyQueryer{}).(*wrapTx)
