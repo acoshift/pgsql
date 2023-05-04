@@ -147,13 +147,17 @@ func q(ctx context.Context) Queryer {
 }
 
 // QueryRow calls db.QueryRowContext
-func QueryRow(ctx context.Context, query string, args ...any) *sql.Row {
-	return q(ctx).QueryRowContext(ctx, query, args...)
+func QueryRow(ctx context.Context, query string, args ...any) *pgsql.Row {
+	return &pgsql.Row{q(ctx).QueryRowContext(ctx, query, args...)}
 }
 
 // Query calls db.QueryContext
-func Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	return q(ctx).QueryContext(ctx, query, args...)
+func Query(ctx context.Context, query string, args ...any) (*pgsql.Rows, error) {
+	rows, err := q(ctx).QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return &pgsql.Rows{rows}, nil
 }
 
 // Exec calls db.ExecContext
