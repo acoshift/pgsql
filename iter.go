@@ -30,7 +30,7 @@ func IterContext(ctx context.Context, q interface {
 	defer rows.Close()
 
 	for rows.Next() {
-		err := iter(rows.Scan)
+		err := iter(Scan(rows.Scan))
 		if err != nil {
 			return err
 		}
