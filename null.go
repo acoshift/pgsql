@@ -30,6 +30,9 @@ func (s null[T]) Value() (driver.Value, error) {
 	if s.value == nil || isZero(*s.value) || *s.value == *(new(T)) {
 		return nil, nil
 	}
+	if v, ok := any(s.value).(driver.Valuer); ok {
+		return v.Value()
+	}
 	return *s.value, nil
 }
 
