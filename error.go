@@ -72,11 +72,13 @@ func IsForeignKeyViolation(err error, constraint ...string) bool {
 // IsQueryCanceled checks is error an query_canceled error
 // (pq: canceling statement due to user request)
 func IsQueryCanceled(err error) bool {
-	var pqErr *pq.Error
-	if errors.As(err, &pqErr) && pqErr.Code == "57014" {
-		return true
-	}
-	return false
+	return IsErrorCode(err, "57014")
+}
+
+// IsSerializationFailure checks is error an serialization_failure error
+// (pq: could not serialize access due to read/write dependencies among transactions)
+func IsSerializationFailure(err error) bool {
+	return IsErrorCode(err, "40001")
 }
 
 func extractConstraint(err *pq.Error) string {
