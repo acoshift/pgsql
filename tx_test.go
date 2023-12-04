@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/acoshift/pgsql"
 )
@@ -118,7 +117,6 @@ func TestTx(t *testing.T) {
 	}
 
 	wg := sync.WaitGroup{}
-	rand.Seed(time.Now().Unix())
 	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		go func() {
