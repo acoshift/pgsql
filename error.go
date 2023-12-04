@@ -16,13 +16,14 @@ func contains(xs []string, x string) bool {
 	return false
 }
 
+type sqlState interface {
+	SQLState() string
+}
+
 // IsErrorCode checks is error has given code
 func IsErrorCode(err error, code string) bool {
-	var pqErr *pq.Error
-	if errors.As(err, &pqErr) && string(pqErr.Code) == code {
-		return true
-	}
-	return false
+	sErr, ok := err.(sqlState)
+	return ok && sErr.SQLState() == code
 }
 
 // IsErrorClass checks is error has given class
@@ -52,7 +53,7 @@ func IsInvalidTextRepresentation(err error) bool {
 	return IsErrorCode(err, "22P02")
 }
 
-// IsCharacterNotInRepertoire checks is error an character_not_in_repertoire
+// IsCharacterNotInRepertoire checks is error a character_not_in_repertoire
 func IsCharacterNotInRepertoire(err error) bool {
 	return IsErrorCode(err, "22021")
 }
@@ -75,7 +76,7 @@ func IsQueryCanceled(err error) bool {
 	return IsErrorCode(err, "57014")
 }
 
-// IsSerializationFailure checks is error an serialization_failure error
+// IsSerializationFailure checks is error a serialization_failure error
 // (pq: could not serialize access due to read/write dependencies among transactions)
 func IsSerializationFailure(err error) bool {
 	return IsErrorCode(err, "40001")

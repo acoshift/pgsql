@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-
-	"github.com/lib/pq"
 )
 
 // ErrAbortTx rollbacks transaction and return nil error
@@ -79,8 +77,7 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 		if err == nil || errors.Is(err, ErrAbortTx) {
 			return nil
 		}
-		var pqErr *pq.Error
-		if retryable := errors.As(err, &pqErr) && (pqErr.Code == "40001"); !retryable {
+		if !IsSerializationFailure(err) {
 			return err
 		}
 	}
