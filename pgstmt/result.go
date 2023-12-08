@@ -17,7 +17,7 @@ func newResult(query string, args []any) *Result {
 	return &Result{query, args}
 }
 
-func (r *Result) SQL() (query string, args any) {
+func (r *Result) SQL() (query string, args []any) {
 	return r.query, r.args
 }
 
