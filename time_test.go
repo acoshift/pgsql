@@ -8,7 +8,10 @@ import (
 )
 
 func TestTime(t *testing.T) {
+	t.Parallel()
+
 	db := open(t)
+	defer db.Close()
 
 	_, err := db.Exec(`
 		drop table if exists test_pgsql_time;

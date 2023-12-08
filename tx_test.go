@@ -13,6 +13,8 @@ import (
 
 func TestTx(t *testing.T) {
 	db := open(t)
+	defer db.Close()
+
 	_, err := db.Exec(`
 		drop table if exists test_pgsql_tx;
 		create table test_pgsql_tx (
