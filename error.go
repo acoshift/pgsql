@@ -22,8 +22,11 @@ type sqlState interface {
 
 // IsErrorCode checks is error has given code
 func IsErrorCode(err error, code string) bool {
-	sErr, ok := err.(sqlState)
-	return ok && sErr.SQLState() == code
+	var sErr sqlState
+	if errors.As(err, &sErr) {
+		return sErr.SQLState() == code
+	}
+	return false
 }
 
 // IsErrorClass checks is error has given class
