@@ -12,6 +12,7 @@ type SelectStatement interface {
 	Distinct() Distinct
 	Columns(col ...any)
 	ColumnSelect(f func(b SelectStatement), as string)
+	ColumnExists(f func(b SelectStatement))
 	From(table ...string)
 	FromSelect(f func(b SelectStatement), as string)
 	FromValues(f func(b Values), as string)
@@ -100,6 +101,15 @@ func (st *selectStmt) ColumnSelect(f func(b SelectStatement), as string) {
 	if as != "" {
 		b.push(as)
 	}
+	st.columns.push(&b)
+}
+
+func (st *selectStmt) ColumnExists(f func(b SelectStatement)) {
+	var x selectStmt
+	f(&x)
+
+	var b buffer
+	b.push("exists", paren(x.make()))
 	st.columns.push(&b)
 }
 

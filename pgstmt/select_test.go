@@ -546,6 +546,26 @@ func TestSelect(t *testing.T) {
 			`,
 			[]any{1},
 		},
+		{
+			"select exists",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.ColumnExists(func(b pgstmt.SelectStatement) {
+					b.Columns("1")
+					b.From("table1")
+					b.Where(func(b pgstmt.Cond) {
+						b.Eq("t1", 1)
+					})
+				})
+			}),
+			`
+				select exists (
+					select 1
+					from table1
+					where (t1 = $1)
+				)
+			`,
+			[]any{1},
+		},
 	}
 
 	for _, tC := range cases {
