@@ -566,6 +566,22 @@ func TestSelect(t *testing.T) {
 			`,
 			[]any{1},
 		},
+		{
+			"array overlap",
+			pgstmt.Select(func(b pgstmt.SelectStatement) {
+				b.Columns("*")
+				b.From("table1")
+				b.Where(func(b pgstmt.Cond) {
+					b.Op("tags", "&&", pq.Array([]string{"a", "b"}))
+				})
+			}),
+			`
+				select *
+				from table1
+				where (tags && $1)
+			`,
+			[]any{pq.Array([]string{"a", "b"})},
+		},
 	}
 
 	for _, tC := range cases {
