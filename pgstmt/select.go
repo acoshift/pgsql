@@ -55,7 +55,7 @@ type Distinct interface {
 
 type Values interface {
 	Value(value ...any)
-	Values(values ...any)
+	Values(values ...[]any)
 }
 
 type OrderBy interface {
@@ -425,9 +425,9 @@ func (st *values) Value(value ...any) {
 	st.push(&x)
 }
 
-func (st *values) Values(values ...any) {
+func (st *values) Values(values ...[]any) {
 	for _, value := range values {
-		st.Value(value)
+		st.Value(value...)
 	}
 }
 

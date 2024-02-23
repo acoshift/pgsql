@@ -171,4 +171,31 @@ func TestInsert(t *testing.T) {
 			args,
 		)
 	})
+
+	t.Run("values", func(t *testing.T) {
+		q, args := pgstmt.Insert(func(b pgstmt.InsertStatement) {
+			b.Into("users")
+			b.Columns("username", "name")
+			b.Values([][]any{
+				{"tester1", "Tester 1"},
+				{"tester2", "Tester 2"},
+			}...)
+		}).SQL()
+
+		assert.Equal(t,
+			stripSpace(`
+				insert into users (username, name)
+				values ($1, $2),
+				       ($3, $4)
+            `),
+			q,
+		)
+		assert.EqualValues(t,
+			[]any{
+				"tester1", "Tester 1",
+				"tester2", "Tester 2",
+			},
+			args,
+		)
+	})
 }
