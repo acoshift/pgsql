@@ -15,7 +15,7 @@ type InsertStatement interface {
 	OverridingUserValue()
 	DefaultValues()
 	Value(value ...any)
-	Values(values ...any)
+	Values(values ...[]any)
 	Select(f func(b SelectStatement))
 
 	OnConflict(f func(b ConflictTarget)) ConflictAction
@@ -89,9 +89,9 @@ func (st *insertStmt) Value(value ...any) {
 	st.values.push(&x)
 }
 
-func (st *insertStmt) Values(values ...any) {
+func (st *insertStmt) Values(values ...[]any) {
 	for _, value := range values {
-		st.Value(value)
+		st.Value(value...)
 	}
 }
 
