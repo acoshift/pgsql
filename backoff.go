@@ -16,6 +16,7 @@ type BackoffConfig struct {
 type ExponentialBackoffConfig struct {
 	BackoffConfig
 	Multiplier float64 // Multiplier for exponential growth
+	JitterType JitterType
 }
 
 // LinearBackoffConfig contains configuration for linear backoff
@@ -36,25 +37,8 @@ const (
 	EqualJitter
 )
 
-// ExponentialBackoffWithJitterConfig contains configuration for exponential backoff with jitter
-type ExponentialBackoffWithJitterConfig struct {
-	ExponentialBackoffConfig
-	JitterType JitterType
-}
-
 // NewExponentialBackoff creates a new exponential backoff function
 func NewExponentialBackoff(config ExponentialBackoffConfig) BackoffDelayFunc {
-	return func(attempt int) time.Duration {
-		delay := time.Duration(float64(config.BaseDelay) * math.Pow(config.Multiplier, float64(attempt)))
-		if delay > config.MaxDelay {
-			delay = config.MaxDelay
-		}
-		return delay
-	}
-}
-
-// NewExponentialBackoffWithJitter creates a new exponential backoff function with jitter
-func NewExponentialBackoffWithJitter(config ExponentialBackoffWithJitterConfig) BackoffDelayFunc {
 	return func(attempt int) time.Duration {
 		baseDelay := time.Duration(float64(config.BaseDelay) * math.Pow(config.Multiplier, float64(attempt)))
 		if baseDelay > config.MaxDelay {
@@ -104,31 +88,28 @@ func DefaultExponentialBackoff() BackoffDelayFunc {
 			MaxDelay:  5 * time.Second,
 		},
 		Multiplier: 2.0,
+		JitterType: NoJitter,
 	})
 }
 
 func DefaultExponentialBackoffWithFullJitter() BackoffDelayFunc {
-	return NewExponentialBackoffWithJitter(ExponentialBackoffWithJitterConfig{
-		ExponentialBackoffConfig: ExponentialBackoffConfig{
-			BackoffConfig: BackoffConfig{
-				BaseDelay: 100 * time.Millisecond,
-				MaxDelay:  5 * time.Second,
-			},
-			Multiplier: 2.0,
+	return NewExponentialBackoff(ExponentialBackoffConfig{
+		BackoffConfig: BackoffConfig{
+			BaseDelay: 100 * time.Millisecond,
+			MaxDelay:  5 * time.Second,
 		},
+		Multiplier: 2.0,
 		JitterType: FullJitter,
 	})
 }
 
 func DefaultExponentialBackoffWithEqualJitter() BackoffDelayFunc {
-	return NewExponentialBackoffWithJitter(ExponentialBackoffWithJitterConfig{
-		ExponentialBackoffConfig: ExponentialBackoffConfig{
-			BackoffConfig: BackoffConfig{
-				BaseDelay: 100 * time.Millisecond,
-				MaxDelay:  5 * time.Second,
-			},
-			Multiplier: 2.0,
+	return NewExponentialBackoff(ExponentialBackoffConfig{
+		BackoffConfig: BackoffConfig{
+			BaseDelay: 100 * time.Millisecond,
+			MaxDelay:  5 * time.Second,
 		},
+		Multiplier: 2.0,
 		JitterType: EqualJitter,
 	})
 }

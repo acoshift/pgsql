@@ -45,17 +45,15 @@ func TestExponentialBackoff(t *testing.T) {
 func TestExponentialBackoffWithFullJitter(t *testing.T) {
 	t.Parallel()
 
-	config := pgsql.ExponentialBackoffWithJitterConfig{
-		ExponentialBackoffConfig: pgsql.ExponentialBackoffConfig{
-			BackoffConfig: pgsql.BackoffConfig{
-				BaseDelay: 100 * time.Millisecond,
-				MaxDelay:  1 * time.Second,
-			},
-			Multiplier: 2.0,
+	config := pgsql.ExponentialBackoffConfig{
+		BackoffConfig: pgsql.BackoffConfig{
+			BaseDelay: 100 * time.Millisecond,
+			MaxDelay:  1 * time.Second,
 		},
+		Multiplier: 2.0,
 		JitterType: pgsql.FullJitter,
 	}
-	backoff := pgsql.NewExponentialBackoffWithJitter(config)
+	backoff := pgsql.NewExponentialBackoff(config)
 
 	// Test that jitter introduces randomness
 	var delays []time.Duration
@@ -88,17 +86,15 @@ func TestExponentialBackoffWithFullJitter(t *testing.T) {
 func TestExponentialBackoffWithEqualJitter(t *testing.T) {
 	t.Parallel()
 
-	config := pgsql.ExponentialBackoffWithJitterConfig{
-		ExponentialBackoffConfig: pgsql.ExponentialBackoffConfig{
-			BackoffConfig: pgsql.BackoffConfig{
-				BaseDelay: 100 * time.Millisecond,
-				MaxDelay:  1 * time.Second,
-			},
-			Multiplier: 2.0,
+	config := pgsql.ExponentialBackoffConfig{
+		BackoffConfig: pgsql.BackoffConfig{
+			BaseDelay: 100 * time.Millisecond,
+			MaxDelay:  1 * time.Second,
 		},
+		Multiplier: 2.0,
 		JitterType: pgsql.EqualJitter,
 	}
-	backoff := pgsql.NewExponentialBackoffWithJitter(config)
+	backoff := pgsql.NewExponentialBackoff(config)
 
 	delay := backoff(2)
 
