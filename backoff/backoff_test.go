@@ -1,23 +1,23 @@
-package pgsql_test
+package backoff_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/acoshift/pgsql"
+	"github.com/acoshift/pgsql/backoff"
 )
 
 func TestExponentialBackoff(t *testing.T) {
 	t.Parallel()
 
-	config := pgsql.ExponentialBackoffConfig{
-		BackoffConfig: pgsql.BackoffConfig{
+	config := backoff.ExponentialBackoffConfig{
+		BackoffConfig: backoff.BackoffConfig{
 			BaseDelay: 10 * time.Millisecond,
 			MaxDelay:  1 * time.Second,
 		},
 		Multiplier: 2.0,
 	}
-	backoff := pgsql.NewExponentialBackoff(config)
+	backoff := backoff.NewExponentialBackoff(config)
 
 	// Test exponential growth
 	delays := []time.Duration{}
@@ -45,15 +45,15 @@ func TestExponentialBackoff(t *testing.T) {
 func TestExponentialBackoffWithFullJitter(t *testing.T) {
 	t.Parallel()
 
-	config := pgsql.ExponentialBackoffConfig{
-		BackoffConfig: pgsql.BackoffConfig{
+	config := backoff.ExponentialBackoffConfig{
+		BackoffConfig: backoff.BackoffConfig{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  1 * time.Second,
 		},
 		Multiplier: 2.0,
-		JitterType: pgsql.FullJitter,
+		JitterType: backoff.FullJitter,
 	}
-	backoff := pgsql.NewExponentialBackoff(config)
+	backoff := backoff.NewExponentialBackoff(config)
 
 	// Test that jitter introduces randomness
 	var delays []time.Duration
@@ -86,15 +86,15 @@ func TestExponentialBackoffWithFullJitter(t *testing.T) {
 func TestExponentialBackoffWithEqualJitter(t *testing.T) {
 	t.Parallel()
 
-	config := pgsql.ExponentialBackoffConfig{
-		BackoffConfig: pgsql.BackoffConfig{
+	config := backoff.ExponentialBackoffConfig{
+		BackoffConfig: backoff.BackoffConfig{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  1 * time.Second,
 		},
 		Multiplier: 2.0,
-		JitterType: pgsql.EqualJitter,
+		JitterType: backoff.EqualJitter,
 	}
-	backoff := pgsql.NewExponentialBackoff(config)
+	backoff := backoff.NewExponentialBackoff(config)
 
 	delay := backoff(2)
 
@@ -116,14 +116,14 @@ func TestExponentialBackoffWithEqualJitter(t *testing.T) {
 func TestLinearBackoff(t *testing.T) {
 	t.Parallel()
 
-	config := pgsql.LinearBackoffConfig{
-		BackoffConfig: pgsql.BackoffConfig{
+	config := backoff.LinearBackoffConfig{
+		BackoffConfig: backoff.BackoffConfig{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  1 * time.Second,
 		},
 		Increment: 100 * time.Millisecond,
 	}
-	backoff := pgsql.NewLinearBackoff(config)
+	backoff := backoff.NewLinearBackoff(config)
 
 	// Test linear growth
 	delays := []time.Duration{}
