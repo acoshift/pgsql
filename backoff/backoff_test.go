@@ -7,17 +7,17 @@ import (
 	"github.com/acoshift/pgsql/backoff"
 )
 
-func TestExponentialBackoff(t *testing.T) {
+func TestExponential(t *testing.T) {
 	t.Parallel()
 
-	config := backoff.ExponentialBackoffConfig{
-		BackoffConfig: backoff.BackoffConfig{
+	config := backoff.ExponentialConfig{
+		Config: backoff.Config{
 			BaseDelay: 10 * time.Millisecond,
 			MaxDelay:  1 * time.Second,
 		},
 		Multiplier: 2.0,
 	}
-	backoff := backoff.NewExponentialBackoff(config)
+	backoff := backoff.NewExponential(config)
 
 	// Test exponential growth
 	delays := []time.Duration{}
@@ -42,18 +42,18 @@ func TestExponentialBackoff(t *testing.T) {
 	}
 }
 
-func TestExponentialBackoffWithFullJitter(t *testing.T) {
+func TestExponentialWithFullJitter(t *testing.T) {
 	t.Parallel()
 
-	config := backoff.ExponentialBackoffConfig{
-		BackoffConfig: backoff.BackoffConfig{
+	config := backoff.ExponentialConfig{
+		Config: backoff.Config{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  1 * time.Second,
 		},
 		Multiplier: 2.0,
 		JitterType: backoff.FullJitter,
 	}
-	backoff := backoff.NewExponentialBackoff(config)
+	backoff := backoff.NewExponential(config)
 
 	// Test that jitter introduces randomness
 	var delays []time.Duration
@@ -83,18 +83,18 @@ func TestExponentialBackoffWithFullJitter(t *testing.T) {
 	}
 }
 
-func TestExponentialBackoffWithEqualJitter(t *testing.T) {
+func TestExponentialWithEqualJitter(t *testing.T) {
 	t.Parallel()
 
-	config := backoff.ExponentialBackoffConfig{
-		BackoffConfig: backoff.BackoffConfig{
+	config := backoff.ExponentialConfig{
+		Config: backoff.Config{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  1 * time.Second,
 		},
 		Multiplier: 2.0,
 		JitterType: backoff.EqualJitter,
 	}
-	backoff := backoff.NewExponentialBackoff(config)
+	backoff := backoff.NewExponential(config)
 
 	delay := backoff(2)
 
@@ -116,14 +116,14 @@ func TestExponentialBackoffWithEqualJitter(t *testing.T) {
 func TestLinearBackoff(t *testing.T) {
 	t.Parallel()
 
-	config := backoff.LinearBackoffConfig{
-		BackoffConfig: backoff.BackoffConfig{
+	config := backoff.LinearConfig{
+		Config: backoff.Config{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  1 * time.Second,
 		},
 		Increment: 100 * time.Millisecond,
 	}
-	backoff := backoff.NewLinearBackoff(config)
+	backoff := backoff.NewLinear(config)
 
 	// Test linear growth
 	delays := []time.Duration{}

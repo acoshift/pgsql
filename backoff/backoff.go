@@ -8,22 +8,22 @@ import (
 	"github.com/acoshift/pgsql"
 )
 
-// BackoffConfig contains common configuration for all backoff strategies
-type BackoffConfig struct {
+// Config contains common configuration for all backoff strategies
+type Config struct {
 	BaseDelay time.Duration // Base delay for backoff
 	MaxDelay  time.Duration // Maximum delay cap
 }
 
-// ExponentialBackoffConfig contains configuration for exponential backoff
-type ExponentialBackoffConfig struct {
-	BackoffConfig
+// ExponentialConfig contains configuration for exponential backoff
+type ExponentialConfig struct {
+	Config
 	Multiplier float64 // Multiplier for exponential growth
 	JitterType JitterType
 }
 
-// LinearBackoffConfig contains configuration for linear backoff
-type LinearBackoffConfig struct {
-	BackoffConfig
+// LinearConfig contains configuration for linear backoff
+type LinearConfig struct {
+	Config
 	Increment time.Duration // Amount to increase delay each attempt
 }
 
@@ -39,8 +39,8 @@ const (
 	EqualJitter
 )
 
-// NewExponentialBackoff creates a new exponential backoff function
-func NewExponentialBackoff(config ExponentialBackoffConfig) pgsql.BackoffDelayFunc {
+// NewExponential creates a new exponential backoff function
+func NewExponential(config ExponentialConfig) pgsql.BackoffDelayFunc {
 	return func(attempt int) time.Duration {
 		baseDelay := time.Duration(float64(config.BaseDelay) * math.Pow(config.Multiplier, float64(attempt)))
 		if baseDelay > config.MaxDelay {
@@ -72,8 +72,8 @@ func NewExponentialBackoff(config ExponentialBackoffConfig) pgsql.BackoffDelayFu
 	}
 }
 
-// NewLinearBackoff creates a new linear backoff function
-func NewLinearBackoff(config LinearBackoffConfig) pgsql.BackoffDelayFunc {
+// NewLinear creates a new linear backoff function
+func NewLinear(config LinearConfig) pgsql.BackoffDelayFunc {
 	return func(attempt int) time.Duration {
 		delay := config.BaseDelay + time.Duration(attempt)*config.Increment
 		if delay > config.MaxDelay {
@@ -83,9 +83,9 @@ func NewLinearBackoff(config LinearBackoffConfig) pgsql.BackoffDelayFunc {
 	}
 }
 
-func DefaultExponentialBackoff() pgsql.BackoffDelayFunc {
-	return NewExponentialBackoff(ExponentialBackoffConfig{
-		BackoffConfig: BackoffConfig{
+func DefaultExponential() pgsql.BackoffDelayFunc {
+	return NewExponential(ExponentialConfig{
+		Config: Config{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  5 * time.Second,
 		},
@@ -94,9 +94,9 @@ func DefaultExponentialBackoff() pgsql.BackoffDelayFunc {
 	})
 }
 
-func DefaultExponentialBackoffWithFullJitter() pgsql.BackoffDelayFunc {
-	return NewExponentialBackoff(ExponentialBackoffConfig{
-		BackoffConfig: BackoffConfig{
+func DefaultExponentialWithFullJitter() pgsql.BackoffDelayFunc {
+	return NewExponential(ExponentialConfig{
+		Config: Config{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  5 * time.Second,
 		},
@@ -105,9 +105,9 @@ func DefaultExponentialBackoffWithFullJitter() pgsql.BackoffDelayFunc {
 	})
 }
 
-func DefaultExponentialBackoffWithEqualJitter() pgsql.BackoffDelayFunc {
-	return NewExponentialBackoff(ExponentialBackoffConfig{
-		BackoffConfig: BackoffConfig{
+func DefaultExponentialWithEqualJitter() pgsql.BackoffDelayFunc {
+	return NewExponential(ExponentialConfig{
+		Config: Config{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  5 * time.Second,
 		},
@@ -116,9 +116,9 @@ func DefaultExponentialBackoffWithEqualJitter() pgsql.BackoffDelayFunc {
 	})
 }
 
-func DefaultLinearBackoff() pgsql.BackoffDelayFunc {
-	return NewLinearBackoff(LinearBackoffConfig{
-		BackoffConfig: BackoffConfig{
+func DefaultLinear() pgsql.BackoffDelayFunc {
+	return NewLinear(LinearConfig{
+		Config: Config{
 			BaseDelay: 100 * time.Millisecond,
 			MaxDelay:  5 * time.Second,
 		},
