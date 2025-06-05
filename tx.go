@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 // ErrAbortTx rollbacks transaction and return nil error
@@ -14,10 +15,14 @@ type BeginTxer interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
 }
 
+// BackoffDelayFunc is a function type that defines the delay for backoff
+type BackoffDelayFunc func(attempt int) time.Duration
+
 // TxOptions is the transaction options
 type TxOptions struct {
 	sql.TxOptions
-	MaxAttempts int
+	MaxAttempts      int
+	BackoffDelayFunc BackoffDelayFunc
 }
 
 const (
@@ -54,6 +59,14 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 		if opts.Isolation == sql.LevelDefault {
 			option.Isolation = sql.LevelSerializable
 		}
+
+		option.BackoffDelayFunc = opts.BackoffDelayFunc
+	}
+
+	var txBackoffTimer *backoffTimer
+	if option.BackoffDelayFunc != nil {
+		txBackoffTimer = newTxBackoffTimer(option.BackoffDelayFunc)
+		defer txBackoffTimer.Stop()
 	}
 
 	f := func() error {
@@ -80,7 +93,45 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 		if !IsSerializationFailure(err) {
 			return err
 		}
+
+		if txBackoffTimer != nil && i < option.MaxAttempts-1 {
+			if err = txBackoffTimer.Wait(ctx, i); err != nil {
+				return err
+			}
+		}
 	}
 
 	return err
+}
+
+type backoffTimer struct {
+	timer            *time.Timer
+	backOffDelayFunc BackoffDelayFunc
+}
+
+func newTxBackoffTimer(backoffDelayFunc BackoffDelayFunc) *backoffTimer {
+	return &backoffTimer{
+		timer:            time.NewTimer(0),
+		backOffDelayFunc: backoffDelayFunc,
+	}
+}
+
+func (b *backoffTimer) Wait(ctx context.Context, attempt int) error {
+	delay := b.backOffDelayFunc(attempt)
+	if delay <= 0 {
+		return nil
+	}
+
+	b.timer.Reset(delay)
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-b.timer.C:
+		return nil
+	}
+}
+
+func (b *backoffTimer) Stop() bool {
+	return b.timer.Stop()
 }
