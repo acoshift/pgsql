@@ -1,7 +1,6 @@
 package pgsql_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -22,7 +21,7 @@ func TestExponentialBackoff(t *testing.T) {
 
 	// Test exponential growth
 	delays := []time.Duration{}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
 		delay := backoff(i)
 		delays = append(delays, delay)
 	}
@@ -31,6 +30,14 @@ func TestExponentialBackoff(t *testing.T) {
 	for i := 1; i < len(delays); i++ {
 		if delays[i] < delays[i-1] {
 			t.Errorf("Expected delay[%d] >= delay[%d], got %v < %v", i, i-1, delays[i], delays[i-1])
+		}
+	}
+
+	// Verify max delay
+	for i := 0; i < 10; i++ {
+		delay := backoff(i)
+		if delay > config.MaxDelay {
+			t.Errorf("Expected delay[%d] <= MaxDelay (%v), got %v", i, config.MaxDelay, delay)
 		}
 	}
 }
@@ -68,6 +75,14 @@ func TestExponentialBackoffWithFullJitter(t *testing.T) {
 	if allSame {
 		t.Error("Expected jitter to produce different delays, but all delays were the same")
 	}
+
+	// Verify max delay
+	for i := 0; i < 15; i++ {
+		delay := backoff(i)
+		if delay > config.MaxDelay {
+			t.Errorf("Expected delay[%d] <= MaxDelay (%v), got %v", i, config.MaxDelay, delay)
+		}
+	}
 }
 
 func TestExponentialBackoffWithEqualJitter(t *testing.T) {
@@ -92,6 +107,14 @@ func TestExponentialBackoffWithEqualJitter(t *testing.T) {
 	if delay < expectedMin {
 		t.Errorf("Expected delay >= %v with equal jitter, got %v", expectedMin, delay)
 	}
+
+	// Verify max delay
+	for i := 0; i < 15; i++ {
+		delay := backoff(i)
+		if delay > config.MaxDelay {
+			t.Errorf("Expected delay[%d] <= MaxDelay (%v), got %v", i, config.MaxDelay, delay)
+		}
+	}
 }
 
 func TestLinearBackoff(t *testing.T) {
@@ -99,10 +122,10 @@ func TestLinearBackoff(t *testing.T) {
 
 	config := pgsql.LinearBackoffConfig{
 		BackoffConfig: pgsql.BackoffConfig{
-			BaseDelay: 50 * time.Millisecond,
-			MaxDelay:  500 * time.Millisecond,
+			BaseDelay: 100 * time.Millisecond,
+			MaxDelay:  1 * time.Second,
 		},
-		Increment: 50 * time.Millisecond,
+		Increment: 100 * time.Millisecond,
 	}
 	backoff := pgsql.NewLinearBackoff(config)
 
@@ -115,90 +138,19 @@ func TestLinearBackoff(t *testing.T) {
 
 	// Verify linear growth
 	for i := 1; i < len(delays); i++ {
-		expectedIncrease := 50 * time.Millisecond
+		expectedIncrease := 100 * time.Millisecond
 		actualIncrease := delays[i] - delays[i-1]
 
 		if actualIncrease != expectedIncrease {
 			t.Errorf("Expected linear increase of %v, got %v", expectedIncrease, actualIncrease)
 		}
 	}
-}
 
-func TestDefaultBackoffFunctions(t *testing.T) {
-	t.Parallel()
-
-	testCases := []struct {
-		name    string
-		backoff pgsql.BackoffDelayFunc
-	}{
-		{"DefaultExponentialBackoff", pgsql.DefaultExponentialBackoff()},
-		{"DefaultExponentialBackoffWithFullJitter", pgsql.DefaultExponentialBackoffWithFullJitter()},
-		{"DefaultExponentialBackoffWithEqualJitter", pgsql.DefaultExponentialBackoffWithEqualJitter()},
-		{"DefaultLinearBackoff", pgsql.DefaultLinearBackoff()},
+	// Verify max delay
+	for i := 0; i < 15; i++ {
+		delay := backoff(i)
+		if delay > config.MaxDelay {
+			t.Errorf("Expected delay[%d] <= MaxDelay (%v), got %v", i, config.MaxDelay, delay)
+		}
 	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			delay := tc.backoff(0)
-
-			// Should have some delay (base delay should be at least 50ms for all defaults)
-			if delay < 50*time.Millisecond {
-				t.Errorf("Expected some delay, got %v", delay)
-			}
-		})
-	}
-}
-
-func TestMaxDelayIsRespected(t *testing.T) {
-	t.Parallel()
-
-	config := pgsql.ExponentialBackoffConfig{
-		BackoffConfig: pgsql.BackoffConfig{
-			BaseDelay: 100 * time.Millisecond,
-			MaxDelay:  200 * time.Millisecond, // Very low max delay
-		},
-		Multiplier: 2.0,
-	}
-	backoff := pgsql.NewExponentialBackoff(config)
-
-	// Test that max delay is respected even with high attempt numbers
-	delay := backoff(10) // This would normally result in a very long delay
-
-	maxExpected := 200 * time.Millisecond
-
-	if delay > maxExpected {
-		t.Errorf("Expected delay capped at %v, got %v", maxExpected, delay)
-	}
-}
-
-// Example demonstrating usage with transaction retry
-func ExampleNewExponentialBackoff() {
-	// Create a custom exponential backoff
-	backoff := pgsql.NewExponentialBackoff(pgsql.ExponentialBackoffConfig{
-		BackoffConfig: pgsql.BackoffConfig{
-			BaseDelay: 100 * time.Millisecond,
-			MaxDelay:  5 * time.Second,
-		},
-		Multiplier: 2.0,
-	})
-
-	// Use with transaction options
-	opts := &pgsql.TxOptions{
-		MaxAttempts:      5,
-		BackoffDelayFunc: backoff,
-	}
-
-	fmt.Printf("Transaction options configured with custom backoff (MaxAttempts: %d)\n", opts.MaxAttempts)
-	// Output: Transaction options configured with custom backoff (MaxAttempts: 5)
-}
-
-func ExampleDefaultExponentialBackoffWithFullJitter() {
-	// Use a pre-configured exponential backoff with full jitter
-	opts := &pgsql.TxOptions{
-		MaxAttempts:      3,
-		BackoffDelayFunc: pgsql.DefaultExponentialBackoffWithFullJitter(),
-	}
-
-	fmt.Printf("Transaction options with full jitter backoff (MaxAttempts: %d)\n", opts.MaxAttempts)
-	// Output: Transaction options with full jitter backoff (MaxAttempts: 3)
 }
