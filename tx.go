@@ -63,12 +63,6 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 		option.BackoffDelayFunc = opts.BackoffDelayFunc
 	}
 
-	var backoffTimer *backoffTimer
-	if option.BackoffDelayFunc != nil {
-		backoffTimer = newBackoffTimer(option.BackoffDelayFunc)
-		defer backoffTimer.Stop()
-	}
-
 	f := func() error {
 		tx, err := db.BeginTx(ctx, &option.TxOptions)
 		if err != nil {
@@ -94,8 +88,8 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 			return err
 		}
 
-		if backoffTimer != nil && i < option.MaxAttempts-1 {
-			if err = backoffTimer.Wait(ctx, i); err != nil {
+		if i < option.MaxAttempts-1 && option.BackoffDelayFunc != nil {
+			if err = wait(ctx, i, option.BackoffDelayFunc); err != nil {
 				return err
 			}
 		}
@@ -104,34 +98,16 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 	return err
 }
 
-type backoffTimer struct {
-	timer            *time.Timer
-	backOffDelayFunc BackoffDelayFunc
-}
-
-func newBackoffTimer(backoffDelayFunc BackoffDelayFunc) *backoffTimer {
-	return &backoffTimer{
-		timer:            time.NewTimer(0),
-		backOffDelayFunc: backoffDelayFunc,
-	}
-}
-
-func (b *backoffTimer) Wait(ctx context.Context, attempt int) error {
-	delay := b.backOffDelayFunc(attempt)
+func wait(ctx context.Context, attempt int, backOffDelayFunc BackoffDelayFunc) error {
+	delay := backOffDelayFunc(attempt)
 	if delay <= 0 {
 		return nil
 	}
 
-	b.timer.Reset(delay)
-
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-b.timer.C:
+	case <-time.After(delay):
 		return nil
 	}
-}
-
-func (b *backoffTimer) Stop() bool {
-	return b.timer.Stop()
 }
