@@ -11,6 +11,19 @@ import (
 	"github.com/acoshift/pgsql"
 )
 
+type pgxError struct {
+	Code           string
+	ConstraintName string
+}
+
+func (e *pgxError) Error() string {
+	return "pgxError"
+}
+
+func (e *pgxError) SQLState() string {
+	return e.Code
+}
+
 func TestIsUniqueViolation(t *testing.T) {
 	t.Parallel()
 
@@ -45,6 +58,21 @@ func TestIsUniqueViolation(t *testing.T) {
 		Table:      "users",
 		Constraint: "users_email_key",
 	}))
+
+	assert.True(t, pgsql.IsUniqueViolation(&pgxError{
+		Code:           "23505",
+		ConstraintName: "users_email_key",
+	}))
+
+	assert.True(t, pgsql.IsUniqueViolation(&pgxError{
+		Code:           "23505",
+		ConstraintName: "users_email_key",
+	}, "users_email_key"))
+
+	assert.False(t, pgsql.IsUniqueViolation(&pgxError{
+		Code:           "23505",
+		ConstraintName: "users_email_key",
+	}, "pkey"))
 }
 
 func TestIsForeignKeyViolation(t *testing.T) {
