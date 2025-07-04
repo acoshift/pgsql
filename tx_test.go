@@ -1,12 +1,16 @@
 package pgsql_test
 
 import (
+	"context"
 	"database/sql"
+	"database/sql/driver"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/acoshift/pgsql"
 )
@@ -147,4 +151,156 @@ func TestTx(t *testing.T) {
 	if result != 0 {
 		t.Fatalf("expected sum all value to be 0; got %d", result)
 	}
+}
+
+func TestTxRetryWithBackoff(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Backoff when serialization failure occurs", func(t *testing.T) {
+		t.Parallel()
+
+		attemptCount := 0
+		opts := &pgsql.TxOptions{
+			MaxAttempts: 3,
+			BackoffDelayFunc: func(attempt int) time.Duration {
+				attemptCount++
+				return 1
+			},
+		}
+
+		pgsql.RunInTxContext(context.Background(), sql.OpenDB(&fakeConnector{}), opts, func(*sql.Tx) error {
+			return &mockSerializationFailureError{}
+		})
+
+		if attemptCount != opts.MaxAttempts-1 {
+			t.Fatalf("expected BackoffDelayFunc to be called %d times, got %d", opts.MaxAttempts, attemptCount)
+		}
+	})
+
+	t.Run("Successful After Multiple Failures", func(t *testing.T) {
+		t.Parallel()
+
+		failCount := 0
+		maxFailures := 3
+		opts := &pgsql.TxOptions{
+			MaxAttempts: maxFailures + 1,
+			BackoffDelayFunc: func(attempt int) time.Duration {
+				return 1
+			},
+		}
+
+		err := pgsql.RunInTxContext(context.Background(), sql.OpenDB(&fakeConnector{}), opts, func(tx *sql.Tx) error {
+			if failCount < maxFailures {
+				failCount++
+				return &mockSerializationFailureError{}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("expected success after failures, got error: %v", err)
+		}
+		if failCount != maxFailures {
+			t.Fatalf("expected %d failures before success, got %d", maxFailures, failCount)
+		}
+	})
+
+	t.Run("Context Cancellation", func(t *testing.T) {
+		t.Parallel()
+
+		opts := &pgsql.TxOptions{
+			MaxAttempts: 3,
+			BackoffDelayFunc: func(attempt int) time.Duration {
+				return 1
+			},
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel the context immediately
+
+		err := pgsql.RunInTxContext(ctx, sql.OpenDB(&fakeConnector{}), opts, func(*sql.Tx) error {
+			return &mockSerializationFailureError{}
+		})
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("expected context.Canceled error, got %v", err)
+		}
+	})
+
+	t.Run("Max Attempts Reached", func(t *testing.T) {
+		t.Parallel()
+
+		attemptCount := 0
+		opts := &pgsql.TxOptions{
+			MaxAttempts: 3,
+			BackoffDelayFunc: func(attempt int) time.Duration {
+				return 1
+			},
+		}
+
+		err := pgsql.RunInTxContext(context.Background(), sql.OpenDB(&fakeConnector{}), opts, func(*sql.Tx) error {
+			attemptCount++
+			return &mockSerializationFailureError{}
+		})
+		if errors.As(err, &mockSerializationFailureError{}) {
+			t.Fatal("expected an error when max attempts reached")
+		}
+		if attemptCount != opts.MaxAttempts {
+			t.Fatalf("expected %d attempts, got %d", opts.MaxAttempts, attemptCount)
+		}
+	})
+}
+
+type fakeConnector struct {
+	driver.Connector
+}
+
+func (c *fakeConnector) Connect(ctx context.Context) (driver.Conn, error) {
+	return &fakeConn{}, nil
+}
+
+func (c *fakeConnector) Driver() driver.Driver {
+	panic("not implemented")
+}
+
+type fakeConn struct {
+	driver.Conn
+}
+
+func (c *fakeConn) Prepare(query string) (driver.Stmt, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (c *fakeConn) Close() error {
+	return nil
+}
+
+func (c *fakeConn) Begin() (driver.Tx, error) {
+	return &fakeTx{}, nil
+}
+
+var _ driver.ConnBeginTx = (*fakeConn)(nil)
+
+func (c *fakeConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+	return &fakeTx{}, nil
+}
+
+type fakeTx struct {
+	driver.Tx
+}
+
+func (tx *fakeTx) Commit() error {
+	return nil
+}
+
+func (tx *fakeTx) Rollback() error {
+	return nil
+}
+
+type mockSerializationFailureError struct{}
+
+func (e mockSerializationFailureError) Error() string {
+	return "mock serialization failure error"
+}
+
+func (e mockSerializationFailureError) SQLState() string {
+	return "40001" // SQLSTATE code for serialization failure
 }

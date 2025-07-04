@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 // ErrAbortTx rollbacks transaction and return nil error
@@ -14,10 +15,14 @@ type BeginTxer interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
 }
 
+// BackoffDelayFunc is a function type that defines the delay for backoff
+type BackoffDelayFunc func(attempt int) time.Duration
+
 // TxOptions is the transaction options
 type TxOptions struct {
 	sql.TxOptions
-	MaxAttempts int
+	MaxAttempts      int
+	BackoffDelayFunc BackoffDelayFunc
 }
 
 const (
@@ -54,6 +59,8 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 		if opts.Isolation == sql.LevelDefault {
 			option.Isolation = sql.LevelSerializable
 		}
+
+		option.BackoffDelayFunc = opts.BackoffDelayFunc
 	}
 
 	f := func() error {
@@ -80,7 +87,27 @@ func RunInTxContext(ctx context.Context, db BeginTxer, opts *TxOptions, fn func(
 		if !IsSerializationFailure(err) {
 			return err
 		}
+
+		if i < option.MaxAttempts-1 && option.BackoffDelayFunc != nil {
+			if err = wait(ctx, i, option.BackoffDelayFunc); err != nil {
+				return err
+			}
+		}
 	}
 
 	return err
+}
+
+func wait(ctx context.Context, attempt int, backOffDelayFunc BackoffDelayFunc) error {
+	delay := backOffDelayFunc(attempt)
+	if delay <= 0 {
+		return nil
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(delay):
+		return nil
+	}
 }
